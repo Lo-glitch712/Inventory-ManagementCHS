@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Scanner — CHS VITAL System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-body">
+
+<!-- Page Header -->
+<div class="page-header">
+  <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1>
+  <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
+</div>
+
+<!-- Navbar -->
+<div class="navbar">
+  <h1>📷 QR Code Scanner</h1>
+  <div class="navbar-right">
+    <a href="dashboard_admin.html" style="padding: 8px 16px; background: var(--primary); color: white; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 14px;">← Back</a>
+  </div>
+</div>
+
+<div class="scanner-wrapper">
+  <div class="card" style="margin-top: 20px;">
+    <h3>📷 Scan Borrower QR Code</h3>
+
+    <div class="hint-box">
+      <strong>How it works:</strong><br>
+      • <strong>First scan:</strong> Confirms the borrow — stock is reduced<br>
+      • <strong>Second scan (same QR):</strong> Confirms the return — stock is restored
+    </div>
+
+    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">Position the QR code within the camera frame below.</p>
+
+    <div id="reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+    <div id="result" style="margin-top: 20px;"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="app.js"></script>
+<script>
+let scanner = null;
+let isProcessing = false;
+
+function onScanSuccess(decodedText) {
+  if (isProcessing) return;
+  isProcessing = true;
+
+  let data;
+  try {
+    data = JSON.parse(decodedText);
+  } catch(e) {
+    showNotification("Invalid QR code format", "error");
+    isProcessing = false;
+    if (scanner) scanner.resume();
+    return;
+  }
+
+  checkBorrowStatus(data);
+}
+
+function checkBorrowStatus(qrData) {
+  fetch(API, {
+    method: "POST",
+    body: new URLSearchParams({ action:"checkBorrowStatus", student:qrData.student, items:qrData.items })
+  })
+  .then(r => r.json())
+  .then(response => {
+    if (response.status === "Borrowed") {
+      processReturn(qrData);
+    } else {
+      processBorrow(qrData);
+    }
+  })
+  .catch(() => {
+    showNotification("Error checking borrow status", "error");
+    isProcessing = false;
+    if (scanner) scanner.resume();
+  });
+}
+
+function processBorrow(data) {
+  document.getElementById("result").innerHTML = `
+    <div class="borrow-record" style="border-left-color: var(--primary);">
+      <div class="borrow-header">📤 Borrow Confirmation</div>
+      <div class="borrow-info">
+        <p><strong>Borrower:</strong> ${data.studentName}</p>
+        <p><strong>Items:</strong> ${data.itemNames || data.items}</p>
+        <p><strong>Return by:</strong> ${new Date(data.returnDate).toLocaleString()}</p>
+      </div>
+    </div>`;
+
+  fetch(API, {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "borrow",
+      student: data.student,
+      studentName: data.studentName,
+      items: data.items,
+      returnDate: data.returnDate
+    })
+  })
+  .then(r => r.json())
+  .then(response => {
+    if (response.status === "success") {
+      showNotification("✓ Borrow confirmed! Stock updated.", "success");
+      document.getElementById("result").innerHTML += `
+        <div style="margin-top:12px; padding:14px; background:#d4f3e8; border-radius:8px; color:#1a6e4a; font-weight:600;">
+          ✓ Stock has been reduced successfully
+        </div>`;
+      resetScanner();
+    } else {
+      showNotification(response.message || "Borrow failed", "error");
+      isProcessing = false;
+      if (scanner) scanner.resume();
+    }
+  })
+  .catch(() => {
+    showNotification("Error processing borrow", "error");
+    isProcessing = false;
+    if (scanner) scanner.resume();
+  });
+}
+
+function processReturn(data) {
+  document.getElementById("result").innerHTML = `
+    <div class="borrow-record" style="border-left-color: var(--accent);">
+      <div class="borrow-header">📥 Return Confirmation</div>
+      <div class="borrow-info">
+        <p><strong>Borrower:</strong> ${data.studentName}</p>
+        <p><strong>Items:</strong> ${data.itemNames || data.items}</p>
+      </div>
+    </div>`;
+
+  fetch(API, {
+    method: "POST",
+    body: new URLSearchParams({
+      action: "returnItem",
+      student: data.student,
+      studentName: data.studentName,
+      items: data.items
+    })
+  })
+  .then(r => r.json())
+  .then(response => {
+    if (response.status === "success") {
+      showNotification("✓ Return confirmed! Stock restored.", "success");
+      document.getElementById("result").innerHTML += `
+        <div style="margin-top:12px; padding:14px; background:#d4f3e8; border-radius:8px; color:#1a6e4a; font-weight:600;">
+          ✓ Stock has been restored successfully
+        </div>`;
+      resetScanner();
+    } else {
+      showNotification(response.message || "Return failed", "error");
+      isProcessing = false;
+      if (scanner) scanner.resume();
+    }
+  })
+  .catch(() => {
+    showNotification("Error processing return", "error");
+    isProcessing = false;
+    if (scanner) scanner.resume();
+  });
+}
+
+function resetScanner() {
+  setTimeout(() => {
+    isProcessing = false;
+    document.getElementById("result").innerHTML = "";
+    if (scanner) scanner.resume();
+  }, 3500);
+}
+
+function onScanError(error) {
+  if (error && error.name === "NotAllowedError") {
+    showNotification("Camera permission denied. Please allow camera access.", "error");
+  }
+}
+
+// Init scanner
+try {
+  scanner = new Html5QrcodeScanner("reader", {
+    fps: 10,
+    qrbox: { width: 250, height: 250 },
+    disableFlip: false
+  }, false);
+  scanner.render(onScanSuccess, onScanError);
+} catch(e) {
+  document.getElementById("reader").innerHTML = `
+    <div class="warning">
+      <strong>Camera Error:</strong> Unable to initialize.<br>
+      • Allow camera permission in browser settings<br>
+      • Use HTTPS or localhost<br>
+      • Ensure no other app is using the camera
+    </div>`;
+}
+
+if (!localStorage.getItem("userID")) window.location = "login.html";
+</script>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — CHS VITAL System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-header">
+    <span class="logo-text">CHS PROJECT VITAL</span>
+    <span class="logo-sub">VIRTUAL • INVENTORY • TRACKING • LOGGING</span>
+  </div>
+
+  <div class="auth-card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Fill in your details to register</p>
+
+    <div class="form-group">
+      <label for="role">Role</label>
+      <select id="role" onchange="handleRoleChange()" required>
+        <option value="">— Select your role —</option>
+        <option value="Clinical Instructor">Clinical Instructor</option>
+        <option value="Student Assistant">Student Assistant</option>
+        <option value="Borrower">Borrower (Student)</option>
+      </select>
+    </div>
+
+    <!-- Role description hint -->
+    <div id="roleHint" class="hint-box" style="display:none;"></div>
+
+    <div class="form-group">
+      <label for="name">Full Name</label>
+      <input id="name" type="text" placeholder="e.g., Juan dela Cruz" autocomplete="name" required>
+    </div>
+
+    <div class="form-group">
+      <label for="department">Department</label>
+      <input id="department" type="text" placeholder="e.g., Nursing, Medicine" required>
+    </div>
+
+    <div class="form-group" id="yearGroup">
+      <label for="year">Year Level <span id="yearRequired" style="color:#c0392b;">*</span></label>
+      <input id="year" type="number" placeholder="e.g., 1, 2, 3, 4" min="1" max="6">
+    </div>
+
+    <div class="form-group">
+      <label for="contact">Contact Number</label>
+      <input id="contact" type="tel" placeholder="e.g., 09XX-XXX-XXXX" required>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email Address</label>
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="Minimum 6 characters" minlength="6" autocomplete="new-password" required>
+    </div>
+
+    <button onclick="register()" style="margin-top: 14px;">Create Account</button>
+
+    <div class="auth-link">
+      Already have an account? <a href="login.html">Sign in</a>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+const roleHints = {
+  "Clinical Instructor": "🩺 <strong>Clinical Instructor</strong> — Full admin access: manage inventory, view all borrows, scan QR codes.",
+  "Student Assistant":   "🎓 <strong>Student Assistant</strong> — Admin access: assist in managing inventory and processing transactions.",
+  "Borrower":            "📦 <strong>Borrower</strong> — Student access: browse items, generate borrow QR codes, and track your borrowed items."
+};
+
+function handleRoleChange() {
+  const role = document.getElementById("role").value;
+  const yearInput = document.getElementById("year");
+  const yearRequired = document.getElementById("yearRequired");
+  const hintBox = document.getElementById("roleHint");
+
+  // Year level: only required for Borrower
+  if (role === "Borrower") {
+    yearInput.setAttribute("required", "");
+    yearRequired.style.display = "inline";
+    document.getElementById("yearGroup").style.display = "block";
+  } else {
+    yearInput.removeAttribute("required");
+    yearRequired.style.display = "none";
+    document.getElementById("yearGroup").style.display = role === "" ? "block" : "none";
+    yearInput.value = "";
+  }
+
+  // Show hint
+  if (role && roleHints[role]) {
+    hintBox.innerHTML = roleHints[role];
+    hintBox.style.display = "block";
+  } else {
+    hintBox.style.display = "none";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", handleRoleChange);
+</script>
+</body>
+</html>

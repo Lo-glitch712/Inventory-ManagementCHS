@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Borrower Dashboard — CHS VITAL System</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body class="dashboard-body">
+
+<!-- Page Header -->
+<div class="page-header">
+  <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1>
+  <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
+</div>
+
+<!-- Navbar -->
+<div class="navbar">
+  <h1>📦 Borrower Dashboard</h1>
+  <div class="navbar-right">
+    <span>Welcome, <strong id="userName"></strong></span>
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+  </div>
+</div>
+
+<!-- Side Menu -->
+<div id="sideMenu" class="side-menu">
+  <button class="close-btn" onclick="toggleMenu()">✕</button>
+  <div class="side-menu-header">
+    <strong id="sideUserName">User</strong>
+    <p>Borrower</p>
+  </div>
+  <div class="menu-content">
+    <button onclick="openProfile()" class="menu-btn">👤 My Profile</button>
+    <button onclick="changePassword()" class="menu-btn">🔐 Change Password</button>
+    <hr style="margin: 10px 0; border: none; border-top: 1px solid rgba(255,255,255,0.12);">
+    <button onclick="logout()" class="menu-btn danger">🚪 Logout</button>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div id="profileModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>👤 My Profile</h3>
+      <button class="close-btn" onclick="closeProfile()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="profileName" readonly style="background:#f4f7f6; color:#777;">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="profileEmail">
+      </div>
+      <div class="form-group">
+        <label>Contact Number</label>
+        <input type="tel" id="profileContact">
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <input type="text" id="profileDepartment">
+      </div>
+      <div class="form-group">
+        <label>Year Level</label>
+        <input type="number" id="profileYear">
+      </div>
+      <button onclick="saveProfile()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Password Modal -->
+<div id="passwordModal" class="modal">
+  <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-header">
+      <h3>🔐 Change Password</h3>
+      <button class="close-btn" onclick="closePassword()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Current Password</label>
+        <input type="password" id="currentPassword" placeholder="Enter current password">
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" id="newPassword" placeholder="At least 6 characters" minlength="6">
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" id="confirmPassword" placeholder="Repeat new password">
+      </div>
+      <button onclick="updatePassword()">✓ Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Return QR Modal -->
+<div id="returnModal" class="modal">
+  <div class="modal-content" style="max-width: 440px;">
+    <div class="modal-header">
+      <h3>📥 Return Item</h3>
+      <button class="close-btn" onclick="closeReturnModal()">✕</button>
+    </div>
+    <div class="modal-body" style="text-align: center;">
+      <p style="font-weight:700; color:var(--primary); margin-bottom:6px;" id="returnItemName"></p>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:18px;">Show this QR code at the counter to process your return.</p>
+      <canvas id="returnQRcode"></canvas>
+      <p style="color:#aaa; font-size:12px; margin-top:12px;">Scan → stock will be restored automatically</p>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Content -->
+<div class="dashboard-main">
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('borrow-tab', this)">📦 Borrow Items</button>
+    <button class="tab-btn" onclick="switchTab('borrowed-tab', this)">🔄 My Borrows</button>
+    <button class="tab-btn" onclick="switchTab('history-tab', this)">📋 History</button>
+  </div>
+
+  <!-- TAB: Borrow -->
+  <div id="borrow-tab" class="tab-content active">
+    <div class="card">
+      <h3>📦 Select Items to Borrow</h3>
+
+      <div class="form-group">
+        <label>🔍 Search Items</label>
+        <input id="searchItems" type="text" placeholder="Search by name or code..." oninput="filterItems()">
+      </div>
+
+      <div id="itemsList" class="items-list"></div>
+
+      <div class="form-group" style="margin-top: 16px;">
+        <label>Expected Return Date &amp; Time</label>
+        <input type="datetime-local" id="returnDate" required>
+      </div>
+
+      <button onclick="generateQR()">🔖 Generate QR Code</button>
+
+      <div class="qr-container" id="qrContainer" style="display:none;">
+        <h4 style="color:var(--primary); margin-bottom:12px;">Your Borrow QR Code</h4>
+        <canvas id="qrcode"></canvas>
+        <p style="color:var(--text-muted); font-size:13px; margin-top:12px;">📱 Show this to the instructor to confirm your borrow</p>
+        <button onclick="saveQRCode()" style="width:auto; padding:10px 24px; margin-top:12px; background:var(--success);">💾 Save QR Code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: My Borrows -->
+  <div id="borrowed-tab" class="tab-content">
+    <div class="card">
+      <h3>🔄 Currently Borrowed</h3>
+      <div id="borrowedItemsList"></div>
+    </div>
+  </div>
+
+  <!-- TAB: History -->
+  <div id="history-tab" class="tab-content">
+    <div class="card">
+      <h3>📋 Borrow History</h3>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+</div><!-- /dashboard-main -->
+
+<script src="app.js"></script>
+<script>
+let selectedItems = [];
+
+// ── Auth ─────────────────────────────────────────
+function checkAuth() {
+  const id   = localStorage.getItem("userID");
+  const name = localStorage.getItem("userName");
+  if (!id) { window.location = "login.html"; return; }
+  document.getElementById("userName").textContent     = name || "User";
+  document.getElementById("sideUserName").textContent = name || "User";
+
+  ["profileModal","passwordModal","returnModal"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("click", e => { if (e.target === el) el.style.display = "none"; });
+  });
+}
+
+// ── Side Menu ────────────────────────────────────
+function toggleMenu() { document.getElementById("sideMenu").classList.toggle("active"); }
+
+document.addEventListener("click", function(e) {
+  const menu   = document.getElementById("sideMenu");
+  const toggle = document.querySelector(".menu-toggle");
+  if (menu && !menu.contains(e.target) && toggle && !toggle.contains(e.target)) {
+    menu.classList.remove("active");
+  }
+});
+
+// ── Tab Switching ────────────────────────────────
+function switchTab(tabName, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  btn.classList.add('active');
+  if (tabName === 'borrowed-tab') loadBorrowedItems();
+  if (tabName === 'history-tab')  loadBorrowHistory();
+  if (tabName === 'borrow-tab')   filterItems();
+}
+
+// ── Profile ──────────────────────────────────────
+function openProfile() {
+  document.getElementById("sideMenu").classList.remove("active");
+  document.getElementById("profileModal").style.display = "flex";
+
+  fetch(API, { method:"POST", body: new URLSearchParams({ action:"getUserProfile", userID: localStorage.getItem("userID") }) })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === "success") {
+      document.getElementById("profileName").value       = data.name       || "";
+      document.getElementById("profileEmail").value      = data.email      || "";
+      document.getElementById("profileContact").value    = data.contact    || "";
+      document.getElementById("profileDepartment").value = data.department || "";
+      document.getElementById("profileYear").value       = data.year       || "";
+    }
+  });
+}
+
+function closeProfile() { document.getElementById("profileModal").style.display = "none"; }
+
+function saveProfile() {
+  fetch(API, {
+    method:"POST",
+    body: new URLSearchParams({
+      action:     "updateUserProfile",
+      userID:     localStorage.getItem("userID"),
+      email:      document.getElementById("profileEmail").value,
+      contact:    document.getElementById("profileContact").value,
+      department: document.getElementById("profileDepartment").value,
+      year:       document.getElementById("profileYear").value
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === "success") { showNotification("✓ Profile updated!", "success"); closeProfile(); }
+    else showNotification("Failed to update profile", "error");
+  });
+}
+
+// ── Password ─────────────────────────────────────
+function changePassword() {
+  document.getElementById("sideMenu").classList.remove("active");
+  document.getElementById("passwordModal").style.display = "flex";
+}
+
+function closePassword() {
+  document.getElementById("passwordModal").style.display = "none";
+  ["currentPassword","newPassword","confirmPassword"].forEach(id => document.getElementById(id).value = "");
+}
+
+function updatePassword() {
+  const np = document.getElementById("newPassword").value;
+  const cp = document.getElementById("confirmPassword").value;
+  if (np !== cp)     { showNotification("Passwords do not match", "error"); return; }
+  if (np.length < 6) { showNotification("Password must be at least 6 characters", "error"); return; }
+
+  fetch(API, {
+    method:"POST",
+    body: new URLSearchParams({
+      action: "changePassword",
+      userID: localStorage.getItem("userID"),
+      currentPassword: document.getElementById("currentPassword").value,
+      newPassword: np
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === "success") { showNotification("✓ Password changed!", "success"); closePassword(); }
+    else showNotification(data.message || "Failed to change password", "error");
+  });
+}
+
+// ── Return QR ────────────────────────────────────
+function closeReturnModal() { document.getElementById("returnModal").style.display = "none"; }
+
+function showReturnQR(itemName, qrData) {
+  const modal = document.getElementById("returnModal");
+  modal.style.display = "flex";
+  document.getElementById("returnItemName").textContent = itemName;
+
+  const container = document.getElementById("returnQRcode").parentElement;
+  document.getElementById("returnQRcode").remove();
+  const newCanvas = document.createElement("canvas");
+  newCanvas.id = "returnQRcode";
+  container.appendChild(newCanvas);
+
+  setTimeout(() => {
+    try {
+      QRCode.toCanvas(newCanvas, qrData, { width: 260, margin: 8 });
+    } catch(e) {
+      showNotification("Error generating return QR", "error");
+    }
+  }, 60);
+}
+
+// ── Load Items ────────────────────────────────────
+function loadItems() {
+  fetch(API, { method:"POST", body: new URLSearchParams({ action:"getItems" }) })
+  .then(r => r.json())
+  .then(data => {
+    const container = document.getElementById("itemsList");
+    container.innerHTML = "";
+
+    if (!data || data.length <= 1) {
+      container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items available</div>";
+      return;
+    }
+
+    for (let i = 1; i < data.length; i++) {
+      const row     = data[i];
+      const itemId  = row[0];
+      const name    = row[1];
+      const size    = row[2];
+      const stock   = parseInt(row[4]) || 0;
+      const avail   = stock > 0;
+
+      container.innerHTML += `
+        <label class="item-label" style="${!avail ? 'opacity:0.45; cursor:not-allowed;' : ''}">
+          <input type="checkbox" class="item-checkbox" value="${itemId}"
+            data-name="${name} ${size ? '('+size+')' : ''}"
+            onchange="selectItem(this)"
+            ${!avail ? 'disabled' : ''}>
+          <span>${name}${size ? ' — <em style="color:var(--text-muted);">' + size + '</em>' : ''}
+            <span style="margin-left:auto; font-size:12px; color:${avail ? 'var(--success)' : 'var(--danger)'}; font-weight:600;">
+              ${avail ? 'Stock: ' + stock : 'Out of stock'}
+            </span>
+          </span>
+        </label>`;
+    }
+  })
+  .catch(() => showNotification("Failed to load items", "error"));
+}
+
+function selectItem(el) {
+  if (el.checked) {
+    selectedItems.push({ id: el.value, name: el.dataset.name });
+  } else {
+    selectedItems = selectedItems.filter(i => i.id !== el.value);
+  }
+}
+
+function filterItems() {
+  const q = document.getElementById("searchItems").value.toLowerCase();
+  document.querySelectorAll(".item-label").forEach(label => {
+    label.style.display = label.textContent.toLowerCase().includes(q) ? "flex" : "none";
+  });
+}
+
+// ── Generate QR ───────────────────────────────────
+function generateQR() {
+  if (selectedItems.length === 0) { showNotification("Please select at least one item", "error"); return; }
+  const rd = document.getElementById("returnDate").value;
+  if (!rd) { showNotification("Please set a return date and time", "error"); return; }
+
+  const data = JSON.stringify({
+    student:     localStorage.getItem("userID"),
+    studentName: localStorage.getItem("userName"),
+    items:       selectedItems.map(i => i.id).join(","),
+    itemNames:   selectedItems.map(i => i.name).join(", "),
+    returnDate:  rd,
+    borrowDate:  new Date().toISOString()
+  });
+
+  QRCode.toCanvas(document.getElementById("qrcode"), data, {
+    width: 280, margin: 10,
+    color: { dark: '#0d4f4f', light: '#FFFFFF' }
+  });
+
+  document.getElementById("qrContainer").style.display = "block";
+  showNotification("✓ QR Code generated! Show it to the instructor.", "success");
+}
+
+function saveQRCode() {
+  const canvas = document.getElementById("qrcode");
+  const link   = document.createElement("a");
+  link.download = "borrow-qr.png";
+  link.href     = canvas.toDataURL();
+  link.click();
+}
+
+// ── Borrowed Items ────────────────────────────────
+function loadBorrowedItems() {
+  fetch(API, { method:"POST", body: new URLSearchParams({ action:"getBorrowedItems", student: localStorage.getItem("userID") }) })
+  .then(r => r.json())
+  .then(data => {
+    const container = document.getElementById("borrowedItemsList");
+    container.innerHTML = "";
+
+    if (!data || data.length === 0 || data.error) {
+      container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
+      return;
+    }
+
+    let found = false;
+    data.forEach(record => {
+      const status     = record.length >= 7 ? record[6] : record[5];
+      const items      = record.length >= 7 ? record[3] : record[2];
+      const returnDateV = record.length >= 7 ? record[5] : record[4];
+
+      if (status !== "Borrowed") return;
+      found = true;
+
+      const returnDate = new Date(returnDateV);
+      const isOverdue  = returnDate < new Date();
+      const qrData     = JSON.stringify({
+        student: record[1],
+        studentName: record.length >= 7 ? record[2] : localStorage.getItem("userName"),
+        items,
+        returnDate: returnDateV,
+        action: "return"
+      });
+
+      container.innerHTML += `
+        <div class="borrowed-item">
+          <div class="borrowed-item-header">${items}</div>
+          <div class="borrowed-item-info">
+            <p><strong>Return by:</strong> ${returnDate.toLocaleString()}</p>
+            ${isOverdue ? '<p style="color:var(--danger); font-weight:600;">⚠️ OVERDUE — Please return immediately!</p>' : ''}
+          </div>
+          <button onclick='showReturnQR("${items.replace(/'/g,"&#39;")}", ${JSON.stringify(qrData).replace(/"/g,'&quot;')})'
+            style="margin-top:12px; background:var(--success); width:auto; padding:10px 20px;">
+            📥 Show Return QR
+          </button>
+        </div>`;
+    });
+
+    if (!found) container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
+  })
+  .catch(() => showNotification("Failed to load borrowed items", "error"));
+}
+
+// ── History ───────────────────────────────────────
+function loadBorrowHistory() {
+  fetch(API, { method:"POST", body: new URLSearchParams({ action:"getBorrowHistory", student: localStorage.getItem("userID") }) })
+  .then(r => r.json())
+  .then(data => {
+    const container = document.getElementById("historyList");
+    container.innerHTML = "";
+
+    if (!data || data.length === 0 || data.error) {
+      container.innerHTML = "<div class='empty-state'><div class='icon'>📋</div>No history yet</div>";
+      return;
+    }
+
+    data.forEach(record => {
+      const status      = record.length >= 7 ? record[6] : record[5];
+      const items       = record.length >= 7 ? record[3] : record[2];
+      const borrowDateV = record.length >= 7 ? record[4] : record[3];
+      const returnDateV = record.length >= 7 ? record[5] : record[4];
+
+      const badge = status === "Returned"
+        ? `<span class="status-badge status-returned">✓ Returned</span>`
+        : `<span class="status-badge status-borrowed">Borrowed</span>`;
+
+      container.innerHTML += `
+        <div class="borrowed-item">
+          <div class="borrowed-item-header">${items}</div>
+          <div class="borrowed-item-info">
+            <p><strong>Borrowed:</strong> ${new Date(borrowDateV).toLocaleString()}</p>
+            <p><strong>Return date:</strong> ${new Date(returnDateV).toLocaleString()}</p>
+            ${badge}
+          </div>
+        </div>`;
+    });
+  })
+  .catch(() => showNotification("Failed to load history", "error"));
+}
+
+// ── Overdue Check ─────────────────────────────────
+function checkOverdueItems() {
+  fetch(API, { method:"POST", body: new URLSearchParams({ action:"getOverdueItems", student: localStorage.getItem("userID") }) })
+  .then(r => r.json())
+  .then(data => {
+    if (data && data.hasOverdue && data.overdueCount > 0) {
+      const list = data.items.map(i => `${i.itemName} (${i.daysOverdue} days)`).join(", ");
+      showNotification(`⚠️ ${data.overdueCount} overdue: ${list}`, "error");
+    }
+  })
+  .catch(() => {});
+}
+
+checkAuth();
+loadItems();
+checkOverdueItems();
+setInterval(checkOverdueItems, 5 * 60 * 1000);
+</script>
+
+</body>
+</html>
