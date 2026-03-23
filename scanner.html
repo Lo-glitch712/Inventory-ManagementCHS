@@ -100,7 +100,9 @@ function processBorrow(data) {
       student: data.student,
       studentName: data.studentName,
       items: data.items,
-      returnDate: data.returnDate
+      returnDate: data.returnDate,
+      lentBy:     localStorage.getItem("userID")   || "",
+      lentByName: localStorage.getItem("userName") || ""
     })
   })
   .then(r => r.json())
