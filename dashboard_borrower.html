@@ -47,6 +47,75 @@
 
     .borrow-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
 
+    /* ── Tap Item Selector ─────────────────────────────── */
+    .tap-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      margin-bottom: 8px;
+      user-select: none;
+    }
+    .tap-item:hover:not(.tap-item-disabled) {
+      border-color: var(--primary);
+      background: #f0faf6;
+    }
+    .tap-item-selected {
+      border-color: var(--primary) !important;
+      background: #e8f6f0 !important;
+      box-shadow: 0 2px 12px rgba(13,79,79,0.10);
+    }
+    .tap-item-disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .tap-check {
+      width: 26px; height: 26px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .tap-qty-box {
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .qty-btn {
+      width: 30px !important; height: 30px !important;
+      border-radius: 50% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 18px !important;
+      font-weight: 700 !important;
+      background: var(--primary) !important;
+      color: white !important;
+      border: none !important;
+      cursor: pointer;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      min-width: unset !important;
+    }
+    .qty-btn:hover { background: var(--primary-dark) !important; }
+    .qty-num {
+      min-width: 26px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--primary);
+    }
+
     .qr-result-box {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius-lg); padding: 24px; margin-top: 20px; text-align: center;
@@ -209,6 +278,7 @@
 <script>
 let selectedItems = [];
 let itemNameMap   = {};   // itemId → display name
+let itemTypeMap   = {};   // itemId → "Consumable" | "Non-Consumable"
 
 // ── Auth ─────────────────────────────────────────────────
 // IMPORTANT: All localStorage keys are scoped per userID
@@ -318,7 +388,9 @@ function loadItems() {
   .then(data => {
     const container = document.getElementById("itemsList");
     container.innerHTML = "";
-    itemNameMap = {};
+    itemNameMap   = {};
+    itemTypeMap   = {};
+    selectedItems = [];
 
     if (!data || data.length <= 1) {
       container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items available</div>";
@@ -331,37 +403,70 @@ function loadItems() {
       const name   = row[1] || "";
       const size   = row[2] || "";
       const stock  = parseInt(row[4]) || 0;
+      const type   = row[5] || "";
       const avail  = stock > 0;
 
       const displayName = size ? `${name} (${size})` : name;
       itemNameMap[itemId] = displayName;
+      itemTypeMap[itemId] = type;
+
+      const typePill = type === "Consumable"
+        ? `<span style="font-size:11px;background:#e8f0ff;color:#2d4fa0;padding:2px 8px;border-radius:10px;font-weight:600;">Consumable</span>`
+        : `<span style="font-size:11px;background:#f0faf6;color:#1a5a3e;padding:2px 8px;border-radius:10px;font-weight:600;">Non-Consumable</span>`;
 
       container.innerHTML += `
-        <label class="item-label" style="${!avail?'opacity:0.45;cursor:not-allowed;':''}">
-          <input type="checkbox" class="item-checkbox"
-            value="${itemId}" data-name="${displayName}"
-            onchange="selectItem(this)" ${!avail?'disabled':''}>
-          <span style="flex:1;">
-            ${name}${size?` <em style="color:var(--text-muted);font-size:13px;">— ${size}</em>`:''}
-          </span>
-          <span style="font-size:12px;font-weight:600;color:${avail?'var(--success)':'var(--danger)'};">
-            ${avail?'Stock: '+stock:'Out of stock'}
-          </span>
-        </label>`;
+        <div class="tap-item ${!avail?'tap-item-disabled':''}" id="ti_${itemId}"
+          onclick="${avail?`tapItem('${itemId}')`:''}">
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:14px;color:var(--primary);">${name}${size?` <em style="color:var(--text-muted);font-weight:400;font-size:13px;">— ${size}</em>`:''}</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+              ${typePill}
+              <span style="font-size:12px;font-weight:600;color:${avail?'var(--success)':'var(--danger)'};">
+                ${avail?`Stock: ${stock}`:'Out of stock'}
+              </span>
+            </div>
+          </div>
+          <div class="tap-qty-box" id="qty_${itemId}" style="display:none;">
+            <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',-1)">−</button>
+            <span class="qty-num" id="qtynum_${itemId}">1</span>
+            <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',1,'${stock}')">+</button>
+          </div>
+          <div class="tap-check" id="chk_${itemId}" style="display:none;">✓</div>
+        </div>`;
     }
   })
   .catch(()=>showNotification("Failed to load items","error"));
 }
 
-function selectItem(el) {
-  if (el.checked) selectedItems.push({ id:el.value, name:el.dataset.name });
-  else            selectedItems = selectedItems.filter(i=>i.id!==el.value);
+function tapItem(itemId) {
+  const existing = selectedItems.find(i=>i.id===itemId);
+  if (existing) {
+    // Already selected — deselect
+    selectedItems = selectedItems.filter(i=>i.id!==itemId);
+    document.getElementById(`ti_${itemId}`).classList.remove('tap-item-selected');
+    document.getElementById(`qty_${itemId}`).style.display = 'none';
+    document.getElementById(`chk_${itemId}`).style.display = 'none';
+  } else {
+    // Select with qty 1
+    selectedItems.push({ id: itemId, name: itemNameMap[itemId], qty: 1 });
+    document.getElementById(`ti_${itemId}`).classList.add('tap-item-selected');
+    document.getElementById(`qty_${itemId}`).style.display = 'flex';
+    document.getElementById(`chk_${itemId}`).style.display = 'flex';
+  }
+}
+
+function changeQty(itemId, delta, maxStock) {
+  const item = selectedItems.find(i=>i.id===itemId);
+  if (!item) return;
+  const max = maxStock ? parseInt(maxStock) : 999;
+  item.qty = Math.min(max, Math.max(1, item.qty + delta));
+  document.getElementById(`qtynum_${itemId}`).textContent = item.qty;
 }
 
 function filterItems() {
   const q = document.getElementById("searchItems").value.toLowerCase();
-  document.querySelectorAll(".item-label").forEach(label => {
-    label.style.display = label.textContent.toLowerCase().includes(q) ? "flex" : "none";
+  document.querySelectorAll(".tap-item").forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? "flex" : "none";
   });
 }
 
@@ -371,12 +476,16 @@ function generateQR() {
   const rd = document.getElementById("returnDate").value;
   if (!rd) { showNotification("Please set a return date and time","error"); return; }
 
-  const itemNamesList = selectedItems.map(i=>i.name);
+  // Build items string with quantity: "id:qty,id:qty"
+  const itemsWithQty  = selectedItems.map(i=>`${i.id}:${i.qty}`).join(",");
+  const itemNamesList = selectedItems.map(i=> i.qty > 1 ? `${i.name} ×${i.qty}` : i.name);
+  const itemTypes     = selectedItems.map(i=> itemTypeMap[i.id] || "").join(",");
 
   const borrowRecord = {
     student:     getUserID(),
     studentName: getUserName(),
-    items:       selectedItems.map(i=>i.id).join(","),
+    items:       itemsWithQty,
+    itemTypes:   itemTypes,
     itemNames:   itemNamesList.join(", "),
     itemList:    itemNamesList,
     returnDate:  rd,
@@ -387,12 +496,12 @@ function generateQR() {
     student:     borrowRecord.student,
     studentName: borrowRecord.studentName,
     items:       borrowRecord.items,
+    itemTypes:   borrowRecord.itemTypes,
     itemNames:   borrowRecord.itemNames,
     returnDate:  borrowRecord.returnDate,
     borrowDate:  borrowRecord.borrowDate
   });
 
-  // Save to this user's localStorage key
   saveBorrowToStorage(borrowRecord);
 
   QRCode.toCanvas(document.getElementById("qrcode"), qrPayload, {
@@ -420,7 +529,13 @@ function resetBorrowForm() {
   document.getElementById("searchItems").value = "";
   document.getElementById("returnDate").value  = "";
   document.getElementById("qrResultBox").style.display = "none";
-  document.querySelectorAll(".item-checkbox").forEach(cb=>cb.checked=false);
+  // Reset all tap items
+  document.querySelectorAll(".tap-item").forEach(el=>{
+    el.classList.remove('tap-item-selected');
+  });
+  document.querySelectorAll(".tap-qty-box").forEach(el=>el.style.display='none');
+  document.querySelectorAll(".tap-check").forEach(el=>el.style.display='none');
+  document.querySelectorAll(".qty-num").forEach(el=>el.textContent='1');
 }
 
 // ── localStorage (per-user scoped) ───────────────────────
@@ -475,13 +590,14 @@ function renderBorrowedItems(serverData) {
       student:     record.student,
       studentName: record.studentName,
       items:       record.items,
+      itemTypes:   record.itemTypes || "",
       itemNames:   record.itemNames,
       returnDate:  record.returnDate,
       action:      "return"
     });
 
     hasAny = true;
-    container.innerHTML += buildBorrowCard({ itemNames, returnDate, isOverdue, qrPayload });
+    container.innerHTML += buildBorrowCard({ itemNames, itemTypes: record.itemTypes || "", returnDate, isOverdue, qrPayload });
   });
 
   // Fallback: server records if no local data (logged in from different device)
@@ -505,7 +621,7 @@ function renderBorrowedItems(serverData) {
       });
 
       hasAny = true;
-      container.innerHTML += buildBorrowCard({ itemNames, returnDate, isOverdue, qrPayload });
+      container.innerHTML += buildBorrowCard({ itemNames, itemTypes: data[i] && data[i][9] ? String(data[i][9]) : "", returnDate, isOverdue, qrPayload });
     });
   }
 
@@ -513,22 +629,52 @@ function renderBorrowedItems(serverData) {
     container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
 }
 
-function buildBorrowCard({ itemNames, returnDate, isOverdue, qrPayload }) {
-  const single    = itemNames.length === 1;
-  const titleText = single ? itemNames[0] : `${itemNames.length} Items Borrowed`;
+function buildBorrowCard({ itemNames, itemTypes, returnDate, isOverdue, qrPayload }) {
+  // Filter out consumables from return display and QR payload
+  let parsedPayload = {};
+  try { parsedPayload = JSON.parse(qrPayload); } catch(e) {}
+
+  // Determine which items are non-consumable (for return)
+  const typeList = (parsedPayload.itemTypes || "").split(",").map(t=>t.trim());
+  const allItemNames  = Array.isArray(itemNames) ? itemNames : [itemNames];
+
+  // Filter: keep only non-consumable entries for return
+  const returnableNames = allItemNames.filter((_, idx) => typeList[idx] !== "Consumable");
+  const hasReturnables  = returnableNames.length > 0;
+
+  // Build a filtered QR payload for return (only non-consumable item IDs)
+  let returnQRPayload = qrPayload;
+  if (parsedPayload.items) {
+    const itemEntries = parsedPayload.items.split(",").map(s=>s.trim()).filter(Boolean);
+    const filteredEntries = itemEntries.filter((_, idx) => typeList[idx] !== "Consumable");
+    if (filteredEntries.length > 0) {
+      const filteredPayload = Object.assign({}, parsedPayload, {
+        items:     filteredEntries.join(","),
+        itemNames: returnableNames.join(", ")
+      });
+      returnQRPayload = JSON.stringify(filteredPayload);
+    }
+  }
+
+  const single    = allItemNames.length === 1;
+  const titleText = single ? allItemNames[0] : `${allItemNames.length} Items Borrowed`;
 
   const groupHTML = !single ? `
     <div class="items-group">
       <div class="items-group-label">Items in this borrow</div>
-      <ul>${itemNames.map(n=>`<li>${n}</li>`).join("")}</ul>
+      <ul>${allItemNames.map((n,i)=>`<li>${n}${typeList[i]==='Consumable'?' <em style="font-size:11px;color:#2d4fa0;">(consumable)</em>':''}</li>`).join("")}</ul>
     </div>` : "";
 
-  // Safely pass data to onclick via data attributes to avoid escaping issues
   const cardId = 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-
-  // Use a global temp store for QR data to avoid HTML escaping issues in onclick
   window._returnQRStore = window._returnQRStore || {};
-  window._returnQRStore[cardId] = { itemNames, qrPayload };
+  window._returnQRStore[cardId] = { itemNames: returnableNames.length ? returnableNames : allItemNames, qrPayload: returnQRPayload };
+
+  const returnBtn = hasReturnables
+    ? `<button onclick="showReturnQRById('${cardId}')"
+        style="width:auto;padding:10px 20px;background:var(--primary);margin-top:0;font-size:13px;">
+        📥 Return Item${returnableNames.length>1?'s':''}
+      </button>`
+    : `<div style="font-size:13px;color:var(--text-muted);font-style:italic;">✓ All consumable items — no return needed</div>`;
 
   return `
     <div class="borrow-card ${isOverdue?'overdue':''}">
@@ -538,12 +684,7 @@ function buildBorrowCard({ itemNames, returnDate, isOverdue, qrPayload }) {
         ${isOverdue?'<br><span style="color:var(--danger);font-weight:600;">Please return immediately!</span>':''}
       </div>
       ${groupHTML}
-      <div class="borrow-actions">
-        <button onclick="showReturnQRById('${cardId}')"
-          style="width:auto;padding:10px 20px;background:var(--primary);margin-top:0;font-size:13px;">
-          📥 Return Item${itemNames.length>1?'s':''}
-        </button>
-      </div>
+      <div class="borrow-actions">${returnBtn}</div>
     </div>`;
 }
 

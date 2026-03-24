@@ -39,7 +39,6 @@ function register() {
   const password        = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
 
-  // Role is always Borrower for self-registration
   const role = 'Borrower';
 
   if (!name)       { showNotification('Please enter your full name', 'error'); return; }
@@ -48,7 +47,6 @@ function register() {
   if (!contact)    { showNotification('Please enter your contact number', 'error'); return; }
   if (!email)      { showNotification('Please enter your school email', 'error'); return; }
 
-  // Enforce school email domain
   if (!email.toLowerCase().endsWith('@gbox.ncf.edu.ph')) {
     showNotification('Email must use @gbox.ncf.edu.ph', 'error');
     return;
@@ -103,11 +101,11 @@ function login() {
   .then(data => {
     setLoading(button, false);
     if (data.status === 'success') {
-      localStorage.setItem('userID',   data.userID);
-      localStorage.setItem('userName', data.name);
-      localStorage.setItem('userRole', data.role);
+      localStorage.setItem('userID',    data.userID);
+      localStorage.setItem('userName',  data.name);
+      localStorage.setItem('userRole',  data.role);
+      localStorage.setItem('userEmail', email);
       showNotification('Login successful! Redirecting...', 'success');
-      // Admin roles: Clinical Instructor OR Student Assistant → admin dashboard
       if (data.role === 'Borrower') {
         setTimeout(() => window.location = 'dashboard_borrower.html', 800);
       } else {
@@ -125,6 +123,17 @@ function login() {
 
 // ── Logout ────────────────────────────────────────────────
 function logout() {
+  const userID   = localStorage.getItem('userID')    || '';
+  const userName = localStorage.getItem('userName')  || '';
+  const userRole = localStorage.getItem('userRole')  || '';
+  const email    = localStorage.getItem('userEmail') || '';
+
+  // Fire-and-forget logout log — don't block the UI
+  fetch(API, {
+    method: 'POST',
+    body: new URLSearchParams({ action: 'logout', userID, userName, userRole, email })
+  }).catch(() => {});
+
   localStorage.clear();
   showNotification('Logged out successfully', 'success');
   setTimeout(() => window.location = 'login.html', 900);

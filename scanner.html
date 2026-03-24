@@ -45,8 +45,14 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="app.js"></script>
 <script>
-let scanner     = null;
+let scanner      = null;
 let isProcessing = false;
+
+// Helper: pause/resume work differently with Html5Qrcode vs Html5QrcodeScanner
+function resumeScanner() {
+  if (!scanner) return;
+  try { scanner.resume(); } catch(e) {}
+}
 
 function onScanSuccess(decodedText) {
   if (isProcessing) return;
@@ -58,7 +64,7 @@ function onScanSuccess(decodedText) {
   } catch(e) {
     showNotification("Invalid QR code format","error");
     isProcessing = false;
-    if (scanner) scanner.resume();
+    resumeScanner();
     return;
   }
 
@@ -66,7 +72,7 @@ function onScanSuccess(decodedText) {
   if (!data.student || !data.items) {
     showNotification("QR code is missing required data","error");
     isProcessing = false;
-    if (scanner) scanner.resume();
+    resumeScanner();
     return;
   }
 
@@ -101,7 +107,7 @@ function checkAndProcess(qrData) {
     showNotification("Error checking status: " + err.message, "error");
     clearResult();
     isProcessing = false;
-    if (scanner) scanner.resume();
+    resumeScanner();
   });
 }
 
@@ -147,14 +153,14 @@ function processBorrow(data) {
       showNotification(response.message || "Borrow failed","error");
       clearResult();
       isProcessing = false;
-      if (scanner) scanner.resume();
+      resumeScanner();
     }
   })
   .catch(err => {
     showNotification("Error processing borrow: " + err.message,"error");
     clearResult();
     isProcessing = false;
-    if (scanner) scanner.resume();
+    resumeScanner();
   });
 }
 
@@ -195,14 +201,14 @@ function processReturn(data) {
       showNotification(response.message || "Return failed","error");
       clearResult();
       isProcessing = false;
-      if (scanner) scanner.resume();
+      resumeScanner();
     }
   })
   .catch(err => {
     showNotification("Error processing return: " + err.message,"error");
     clearResult();
     isProcessing = false;
-    if (scanner) scanner.resume();
+    resumeScanner();
   });
 }
 
@@ -229,7 +235,7 @@ function resetScanner(delay) {
   setTimeout(() => {
     isProcessing = false;
     clearResult();
-    if (scanner) scanner.resume();
+    resumeScanner();
   }, delay || 3500);
 }
 
@@ -240,24 +246,58 @@ function onScanError(error) {
   }
 }
 
-// ── Init Scanner ──────────────────────────────────────────
-try {
-  scanner = new Html5QrcodeScanner("reader", {
-    fps: 10,
-    qrbox: { width: 250, height: 250 },
-    disableFlip: false,
-    rememberLastUsedCamera: true
-  }, false);
-  scanner.render(onScanSuccess, onScanError);
-} catch(e) {
-  document.getElementById("reader").innerHTML = `
-    <div class="warning">
-      <strong>Camera Error:</strong> Unable to initialize camera.<br>
-      • Allow camera permission in browser settings<br>
-      • Use HTTPS or localhost<br>
-      • Ensure no other app is using the camera
-    </div>`;
+// ── Init Scanner — back/rear camera only ─────────────────
+async function initScanner() {
+  try {
+    // Get list of video devices and pick the back/rear camera
+    const devices = await Html5Qrcode.getCameras();
+    if (!devices || devices.length === 0) {
+      throw new Error("No camera devices found");
+    }
+
+    // Prefer any camera labeled "back", "rear", or "environment"
+    // On most phones the last camera in the list is also the rear camera
+    let cameraId = null;
+    for (const d of devices) {
+      const label = (d.label || "").toLowerCase();
+      if (label.includes("back") || label.includes("rear") || label.includes("environment")) {
+        cameraId = d.id;
+        break;
+      }
+    }
+    // Fallback: use last device (usually rear on mobile)
+    if (!cameraId) cameraId = devices[devices.length - 1].id;
+
+    scanner = new Html5Qrcode("reader");
+    scanner.start(
+      cameraId,
+      { fps: 10, qrbox: { width: 250, height: 250 }, disableFlip: false },
+      onScanSuccess,
+      onScanError
+    );
+  } catch (e) {
+    // Final fallback: use facingMode environment (standard constraint)
+    try {
+      scanner = new Html5Qrcode("reader");
+      scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 }, disableFlip: false },
+        onScanSuccess,
+        onScanError
+      );
+    } catch (e2) {
+      document.getElementById("reader").innerHTML = `
+        <div class="warning">
+          <strong>Camera Error:</strong> Unable to initialize back camera.<br>
+          • Allow camera permission in browser settings<br>
+          • Use HTTPS or localhost<br>
+          • Ensure no other app is using the camera
+        </div>`;
+    }
+  }
 }
+
+initScanner();
 
 // Auth guard
 if (!localStorage.getItem("userID")) window.location = "login.html";

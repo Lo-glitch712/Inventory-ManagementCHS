@@ -195,6 +195,12 @@
 
     <div class="card">
       <h3>📋 Inventory List</h3>
+      <div class="form-group" style="margin-bottom:14px;">
+        <input id="inventorySearch" type="text" placeholder="🔍 Search items by name, code, or location..."
+          oninput="filterInventoryTable()"
+          style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
       <div class="table-wrapper">
         <table id="inventoryTable"></table>
       </div>
@@ -331,6 +337,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el) el.addEventListener("click", e => { if (e.target === el) el.style.display = "none"; });
   });
 });
+
+// ── Inventory Search ──────────────────────────────────────
+function filterInventoryTable() {
+  const q     = document.getElementById("inventorySearch").value.toLowerCase().trim();
+  const tbody = document.querySelector("#inventoryTable tbody");
+  if (!tbody) return;
+  Array.from(tbody.rows).forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+}
 
 // ── Inventory ─────────────────────────────────────────────
 function loadItems() {
