@@ -6,10 +6,8 @@
   <title>Admin Dashboard — CHS VITAL System</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* Modal centering fix — style.display="flex" needs these pre-set */
     .modal { justify-content: center; align-items: center; padding: 20px; }
 
-    /* Filter buttons */
     .filter-btn {
       padding: 7px 16px;
       font-size: 13px;
@@ -21,20 +19,52 @@
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: 'DM Sans', sans-serif;
+      margin-top: 0;
+      width: auto;
     }
-    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn:hover  { border-color: var(--primary); color: var(--primary); transform: none; box-shadow: none; }
     .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* Stock badge */
+    .stock-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .stock-ok  { background: #d4f3e8; color: #1a6e4a; }
+    .stock-low { background: #fff3cd; color: #8a6400; }
+    .stock-out { background: #fde8e8; color: var(--danger); }
+
+    /* Type pill */
+    .type-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .type-consumable     { background: #e8f0ff; color: #2d4fa0; }
+    .type-nonconsumable  { background: #f0faf6; color: #1a5a3e; }
+
+    /* Action buttons in table */
+    .tbl-btn {
+      padding: 5px 12px !important;
+      font-size: 12px !important;
+      width: auto !important;
+      margin: 2px !important;
+      border-radius: 6px !important;
+    }
   </style>
 </head>
 <body class="dashboard-body">
 
-<!-- Page Header -->
 <div class="page-header">
   <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1>
   <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
 </div>
 
-<!-- Navbar -->
 <div class="navbar">
   <h1>🛡️ Admin Dashboard</h1>
   <div class="navbar-right">
@@ -53,7 +83,7 @@
   <div class="menu-content">
     <button onclick="openProfile()" class="menu-btn">👤 My Profile</button>
     <button onclick="changePassword()" class="menu-btn">🔐 Change Password</button>
-    <hr style="margin: 10px 0; border: none; border-top: 1px solid rgba(255,255,255,0.12);">
+    <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.12);">
     <button onclick="logout()" class="menu-btn danger">🚪 Logout</button>
   </div>
 </div>
@@ -66,22 +96,10 @@
       <button class="close-btn" onclick="closeProfile()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="profileName" readonly style="background:#f4f7f6; color:#777;">
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="profileEmail">
-      </div>
-      <div class="form-group">
-        <label>Contact Number</label>
-        <input type="tel" id="profileContact">
-      </div>
-      <div class="form-group">
-        <label>Department</label>
-        <input type="text" id="profileDepartment">
-      </div>
+      <div class="form-group"><label>Full Name</label><input type="text" id="profileName" readonly style="background:#f4f7f6;color:#777;"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="profileEmail"></div>
+      <div class="form-group"><label>Contact Number</label><input type="tel" id="profileContact"></div>
+      <div class="form-group"><label>Department</label><input type="text" id="profileDepartment"></div>
       <button onclick="saveProfile()">💾 Save Changes</button>
     </div>
   </div>
@@ -89,32 +107,64 @@
 
 <!-- Password Modal -->
 <div id="passwordModal" class="modal">
-  <div class="modal-content" style="max-width: 400px;">
+  <div class="modal-content" style="max-width:400px;">
     <div class="modal-header">
       <h3>🔐 Change Password</h3>
       <button class="close-btn" onclick="closePassword()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>Current Password</label>
-        <input type="password" id="currentPassword" placeholder="Enter current password">
-      </div>
-      <div class="form-group">
-        <label>New Password</label>
-        <input type="password" id="newPassword" placeholder="At least 6 characters" minlength="6">
-      </div>
-      <div class="form-group">
-        <label>Confirm New Password</label>
-        <input type="password" id="confirmPassword" placeholder="Repeat new password">
-      </div>
+      <div class="form-group"><label>Current Password</label><input type="password" id="currentPassword" placeholder="Enter current password"></div>
+      <div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="At least 8 characters" minlength="8"></div>
+      <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password"></div>
       <button onclick="updatePassword()">✓ Update Password</button>
     </div>
   </div>
 </div>
 
+<!-- Edit Item Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-content" style="max-width:500px;">
+    <div class="modal-header">
+      <h3>✏️ Edit Item</h3>
+      <button class="close-btn" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editRowIndex">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+        <div class="form-group"><label>Item Name</label><input id="editItem" type="text"></div>
+        <div class="form-group"><label>Size / Variant</label><input id="editSize" type="text"></div>
+        <div class="form-group"><label>Item Code</label><input id="editCode" type="text"></div>
+        <div class="form-group"><label>Stock Quantity</label><input id="editStock" type="number" min="0"></div>
+        <div class="form-group">
+          <label>Item Type</label>
+          <select id="editType">
+            <option value="Consumable">Consumable</option>
+            <option value="Non-Consumable">Non-Consumable</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Storage Location</label><input id="editLocation" type="text"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button onclick="saveEditItem()" style="flex:1;">💾 Save Changes</button>
+        <button onclick="closeEditModal()" style="flex:1;background:var(--surface-alt);color:var(--text-main);border:1.5px solid var(--border);margin-top:0;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Borrower Detail Modal -->
+<div id="borrowerDetailModal" class="modal">
+  <div class="modal-content" style="max-width:540px;">
+    <div class="modal-header">
+      <h3 id="detailModalTitle">Borrower Details</h3>
+      <button class="close-btn" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="modal-body" id="detailModalBody"></div>
+  </div>
+</div>
+
 <!-- Dashboard Content -->
 <div class="dashboard-main">
-
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('inventory-tab', this)">📦 Inventory</button>
     <button class="tab-btn" onclick="switchTab('borrowed-tab', this)">🔄 Borrows <span class="badge" id="borrowedCount" style="display:none;"></span></button>
@@ -125,31 +175,20 @@
   <div id="inventory-tab" class="tab-content active">
     <div class="card">
       <h3>➕ Add New Item</h3>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0 16px;">
-        <div class="form-group">
-          <label>Item Name</label>
-          <input id="item" type="text" placeholder="e.g., Stethoscope">
-        </div>
-        <div class="form-group">
-          <label>Size / Variant</label>
-          <input id="size" type="text" placeholder="e.g., Large, Adult">
-        </div>
-        <div class="form-group">
-          <label>Item Code</label>
-          <input id="code" type="text" placeholder="e.g., STH-001">
-        </div>
-        <div class="form-group">
-          <label>Stock Quantity</label>
-          <input id="stock" type="number" placeholder="0" min="0">
-        </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+        <div class="form-group"><label>Item Name</label><input id="item" type="text" placeholder="e.g., Stethoscope"></div>
+        <div class="form-group"><label>Size / Variant</label><input id="size" type="text" placeholder="e.g., Large, Adult"></div>
+        <div class="form-group"><label>Item Code</label><input id="code" type="text" placeholder="e.g., STH-001"></div>
+        <div class="form-group"><label>Stock Quantity</label><input id="stock" type="number" placeholder="0" min="0"></div>
         <div class="form-group">
           <label>Item Type</label>
-          <input id="type" type="text" placeholder="e.g., Medical Equipment">
+          <select id="type">
+            <option value="">— Select type —</option>
+            <option value="Consumable">Consumable</option>
+            <option value="Non-Consumable">Non-Consumable</option>
+          </select>
         </div>
-        <div class="form-group">
-          <label>Storage Location</label>
-          <input id="location" type="text" placeholder="e.g., Cabinet A1">
-        </div>
+        <div class="form-group"><label>Storage Location</label><input id="location" type="text" placeholder="e.g., Cabinet A1"></div>
       </div>
       <button onclick="addItem()">➕ Add Item</button>
     </div>
@@ -162,32 +201,18 @@
     </div>
   </div>
 
-  <!-- TAB: Borrowed -->
+  <!-- TAB: Borrows -->
   <div id="borrowed-tab" class="tab-content">
     <div class="card">
       <h3>🔄 Borrow Tracking</h3>
       <div id="warningContainer"></div>
-
-      <!-- Filter toggle -->
-      <div style="display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;">
-        <button class="filter-btn active" onclick="setFilter('all', this)">All Borrowers</button>
-        <button class="filter-btn" onclick="setFilter('borrowed', this)">📤 Active</button>
-        <button class="filter-btn" onclick="setFilter('returned', this)">✅ Returned</button>
-        <button class="filter-btn" onclick="setFilter('overdue', this)">⚠️ Overdue</button>
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+        <button class="filter-btn active" onclick="setFilter('all',this)">All Borrowers</button>
+        <button class="filter-btn" onclick="setFilter('borrowed',this)">📤 Active</button>
+        <button class="filter-btn" onclick="setFilter('returned',this)">✅ Returned</button>
+        <button class="filter-btn" onclick="setFilter('overdue',this)">⚠️ Overdue</button>
       </div>
-
       <div id="borrowerGrid"></div>
-    </div>
-  </div>
-
-  <!-- Borrower Detail Modal -->
-  <div id="borrowerDetailModal" class="modal">
-    <div class="modal-content" style="max-width: 540px;">
-      <div class="modal-header">
-        <h3 id="detailModalTitle">Borrower Details</h3>
-        <button class="close-btn" onclick="closeDetailModal()">✕</button>
-      </div>
-      <div class="modal-body" id="detailModalBody"></div>
     </div>
   </div>
 
@@ -197,56 +222,48 @@
       <h3>📱 QR Code Scanner</h3>
       <div class="hint-box">
         <strong>How scanning works:</strong><br>
-        • <strong>First scan:</strong> Confirms borrow and deducts stock<br>
-        • <strong>Second scan (same QR):</strong> Confirms return and restores stock
+        • <strong>First scan:</strong> Confirms borrow — stock is deducted<br>
+        • <strong>Second scan (same QR):</strong> Confirms return — stock is restored
       </div>
-      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 18px;">Open the scanner in a full-screen view for best camera performance.</p>
-      <a href="scanner.html" style="display: inline-block; padding: 12px 28px; background: var(--primary); color: white; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 15px; transition: all 0.2s;">📷 Open Scanner</a>
+      <p style="color:var(--text-muted);font-size:14px;margin-bottom:18px;">Open the scanner in a full-screen view for best camera performance.</p>
+      <a href="scanner.html" style="display:inline-block;padding:12px 28px;background:var(--primary);color:white;border-radius:8px;font-weight:600;text-decoration:none;font-size:15px;transition:all 0.2s;">📷 Open Scanner</a>
     </div>
   </div>
-
-</div><!-- /dashboard-main -->
+</div>
 
 <script src="app.js"></script>
 <script>
-let currentData = [];
+let currentData      = [];
+let allBorrowRecords = [];
+let currentFilter    = 'all';
 
-// ── Auth & Init ──────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────
 function checkAuth() {
   const id   = localStorage.getItem("userID");
   const name = localStorage.getItem("userName");
   const role = localStorage.getItem("userRole");
-
   if (!id) { window.location = "login.html"; return; }
 
-  document.getElementById("userName").textContent = name || "User";
+  document.getElementById("userName").textContent     = name || "User";
   document.getElementById("sideUserName").textContent = name || "User";
-  document.getElementById("sideUserRole").textContent  = role || "";
+  document.getElementById("sideUserRole").textContent = role || "";
 
-  // Role badge in navbar
-  const roleColors = {
-    "Clinical Instructor": "role-admin",
-    "Student Assistant":   "role-sa"
-  };
+  const roleColors = { "Clinical Instructor":"role-admin", "Student Assistant":"role-sa" };
   const tag = document.getElementById("roleTag");
   tag.className = "role-badge " + (roleColors[role] || "role-admin");
   tag.textContent = role || "";
 }
 
-// ── Side Menu ────────────────────────────────────
-function toggleMenu() {
-  document.getElementById("sideMenu").classList.toggle("active");
-}
-
-document.addEventListener("click", function(e) {
-  const menu   = document.getElementById("sideMenu");
-  const toggle = document.querySelector(".menu-toggle");
-  if (menu && !menu.contains(e.target) && toggle && !toggle.contains(e.target)) {
+// ── Side Menu ─────────────────────────────────────────────
+function toggleMenu() { document.getElementById("sideMenu").classList.toggle("active"); }
+document.addEventListener("click", e => {
+  const menu = document.getElementById("sideMenu");
+  const tog  = document.querySelector(".menu-toggle");
+  if (menu && !menu.contains(e.target) && tog && !tog.contains(e.target))
     menu.classList.remove("active");
-  }
 });
 
-// ── Tab Switching ────────────────────────────────
+// ── Tabs ──────────────────────────────────────────────────
 function switchTab(tabName, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -255,19 +272,12 @@ function switchTab(tabName, btn) {
   if (tabName === 'borrowed-tab') loadBorrowedItemsTracking();
 }
 
-// ── Profile ──────────────────────────────────────
+// ── Profile ───────────────────────────────────────────────
 function openProfile() {
-  closeMenu && closeMenu();
   document.getElementById("sideMenu").classList.remove("active");
-  const modal = document.getElementById("profileModal");
-  modal.style.display = "flex";
-
-  fetch(API, {
-    method: "POST",
-    body: new URLSearchParams({ action:"getUserProfile", userID: localStorage.getItem("userID") })
-  })
-  .then(r => r.json())
-  .then(data => {
+  document.getElementById("profileModal").style.display = "flex";
+  fetch(API, { method:"POST", body: new URLSearchParams({ action:"getUserProfile", userID:localStorage.getItem("userID") }) })
+  .then(r=>r.json()).then(data => {
     if (data.status === "success") {
       document.getElementById("profileName").value       = data.name       || "";
       document.getElementById("profileEmail").value      = data.email      || "";
@@ -276,170 +286,235 @@ function openProfile() {
     }
   });
 }
-
 function closeProfile() { document.getElementById("profileModal").style.display = "none"; }
-
 function saveProfile() {
-  fetch(API, {
-    method: "POST",
-    body: new URLSearchParams({
-      action:     "updateUserProfile",
-      userID:     localStorage.getItem("userID"),
-      email:      document.getElementById("profileEmail").value,
-      contact:    document.getElementById("profileContact").value,
-      department: document.getElementById("profileDepartment").value
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.status === "success") {
-      showNotification("✓ Profile updated!", "success");
-      closeProfile();
-    } else {
-      showNotification("Failed to update profile", "error");
-    }
+  fetch(API, { method:"POST", body: new URLSearchParams({
+    action:"updateUserProfile", userID:localStorage.getItem("userID"),
+    email:document.getElementById("profileEmail").value,
+    contact:document.getElementById("profileContact").value,
+    department:document.getElementById("profileDepartment").value
+  })})
+  .then(r=>r.json()).then(data => {
+    if (data.status==="success") { showNotification("✓ Profile updated!","success"); closeProfile(); }
+    else showNotification("Failed to update profile","error");
   });
 }
 
-// ── Password ─────────────────────────────────────
+// ── Password ──────────────────────────────────────────────
 function changePassword() {
   document.getElementById("sideMenu").classList.remove("active");
   document.getElementById("passwordModal").style.display = "flex";
 }
-
 function closePassword() {
   document.getElementById("passwordModal").style.display = "none";
   ["currentPassword","newPassword","confirmPassword"].forEach(id => document.getElementById(id).value = "");
 }
-
 function updatePassword() {
   const np = document.getElementById("newPassword").value;
   const cp = document.getElementById("confirmPassword").value;
-  if (np !== cp)    { showNotification("Passwords do not match", "error"); return; }
-  if (np.length < 6){ showNotification("Password must be at least 6 characters", "error"); return; }
-
-  fetch(API, {
-    method: "POST",
-    body: new URLSearchParams({
-      action:          "changePassword",
-      userID:          localStorage.getItem("userID"),
-      currentPassword: document.getElementById("currentPassword").value,
-      newPassword:     np
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.status === "success") {
-      showNotification("✓ Password changed!", "success");
-      closePassword();
-    } else {
-      showNotification(data.message || "Failed to change password", "error");
-    }
+  if (np !== cp)    { showNotification("Passwords do not match","error"); return; }
+  if (np.length < 8){ showNotification("Password must be at least 8 characters","error"); return; }
+  fetch(API, { method:"POST", body: new URLSearchParams({
+    action:"changePassword", userID:localStorage.getItem("userID"),
+    currentPassword:document.getElementById("currentPassword").value, newPassword:np
+  })})
+  .then(r=>r.json()).then(data => {
+    if (data.status==="success") { showNotification("✓ Password changed!","success"); closePassword(); }
+    else showNotification(data.message||"Failed to change password","error");
   });
 }
 
-// Modal close on backdrop click
+// Modal backdrop close
 document.addEventListener("DOMContentLoaded", () => {
-  ["profileModal","passwordModal","borrowerDetailModal"].forEach(id => {
+  ["profileModal","passwordModal","editModal","borrowerDetailModal"].forEach(id => {
     const el = document.getElementById(id);
-    el.addEventListener("click", e => { if (e.target === el) el.style.display = "none"; });
+    if (el) el.addEventListener("click", e => { if (e.target === el) el.style.display = "none"; });
   });
 });
 
-// ── Inventory ─────────────────────────────────────
+// ── Inventory ─────────────────────────────────────────────
 function loadItems() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getItems" }) })
-  .then(r => r.json())
+  .then(r=>r.json())
   .then(data => {
     currentData = data;
     const table = document.getElementById("inventoryTable");
 
     if (!data || data.length <= 1) {
-      table.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#999; padding:30px;">No items in inventory yet.</td></tr>`;
+      table.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;padding:30px;">No items in inventory yet.</td></tr>`;
       return;
     }
 
     table.innerHTML = `
       <thead><tr>
-        <th>Item</th><th>Size</th><th>Code</th><th>Stock</th><th>Type</th><th>Location</th><th>Action</th>
+        <th>Item</th>
+        <th>Size</th>
+        <th>Code</th>
+        <th>Stock</th>
+        <th>In Stock</th>
+        <th>Type</th>
+        <th>Location</th>
+        <th>Actions</th>
       </tr></thead>
-      <tbody></tbody>
-    `;
+      <tbody></tbody>`;
+
     const tbody = table.querySelector("tbody");
 
     for (let i = 1; i < data.length; i++) {
-      const row = data[i];
+      const row   = data[i];
+      const stock = parseInt(row[4]) || 0;
+
+      // Stock badge
+      let stockBadge;
+      if (stock === 0)   stockBadge = `<span class="stock-badge stock-out">Out of Stock</span>`;
+      else if (stock <= 3) stockBadge = `<span class="stock-badge stock-low">Low (${stock})</span>`;
+      else                 stockBadge = `<span class="stock-badge stock-ok">In Stock (${stock})</span>`;
+
+      // Type pill
+      const typeVal = (row[5] || "").trim();
+      const typePill = typeVal === "Consumable"
+        ? `<span class="type-pill type-consumable">Consumable</span>`
+        : typeVal === "Non-Consumable"
+        ? `<span class="type-pill type-nonconsumable">Non-Consumable</span>`
+        : `<span style="color:var(--text-muted);font-size:13px;">${typeVal || "—"}</span>`;
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td contenteditable onblur="updateField(${i},1,this.innerText)">${row[1]||''}</td>
-        <td contenteditable onblur="updateField(${i},2,this.innerText)">${row[2]||''}</td>
-        <td contenteditable onblur="updateField(${i},3,this.innerText)">${row[3]||''}</td>
-        <td contenteditable onblur="updateField(${i},4,this.innerText)">${row[4]||''}</td>
-        <td contenteditable onblur="updateField(${i},5,this.innerText)">${row[5]||''}</td>
-        <td contenteditable onblur="updateField(${i},6,this.innerText)">${row[6]||''}</td>
-        <td><button class="btn-danger btn-sm" onclick="deleteItem(${i})" style="margin-top:0;">Delete</button></td>
-      `;
+        <td style="font-weight:600;">${row[1]||'—'}</td>
+        <td>${row[2]||'—'}</td>
+        <td><code style="font-size:12px;background:#f4f7f6;padding:2px 6px;border-radius:4px;">${row[3]||'—'}</code></td>
+        <td style="font-weight:700;color:${stock===0?'var(--danger)':stock<=3?'var(--warning)':'var(--text-main)'};">${stock}</td>
+        <td>${stockBadge}</td>
+        <td>${typePill}</td>
+        <td>${row[6]||'—'}</td>
+        <td style="white-space:nowrap;">
+          <button class="tbl-btn btn-success" onclick="openEditModal(${i})" style="background:var(--primary);">✏️ Edit</button>
+          <button class="tbl-btn btn-danger"  onclick="deleteItem(${i})">🗑 Delete</button>
+        </td>`;
       tbody.appendChild(tr);
     }
   })
-  .catch(() => showNotification("Failed to load inventory", "error"));
+  .catch(() => showNotification("Failed to load inventory","error"));
 }
 
-function updateField(index, col, value) {
-  fetch(API, { method:"POST", body: new URLSearchParams({ action:"updateItem", row:index, col, value }) })
-  .then(r => r.json())
-  .then(data => { if (data.status !== "success") { showNotification("Failed to update", "error"); loadItems(); } });
+// ── Edit Item Modal ───────────────────────────────────────
+function openEditModal(index) {
+  const row = currentData[index];
+  if (!row) return;
+
+  document.getElementById("editRowIndex").value  = index;
+  document.getElementById("editItem").value      = row[1] || "";
+  document.getElementById("editSize").value      = row[2] || "";
+  document.getElementById("editCode").value      = row[3] || "";
+  document.getElementById("editStock").value     = row[4] || "";
+  document.getElementById("editType").value      = row[5] || "Consumable";
+  document.getElementById("editLocation").value  = row[6] || "";
+
+  document.getElementById("editModal").style.display = "flex";
 }
 
-function deleteItem(index) {
-  if (!confirm("Delete this item? This cannot be undone.")) return;
-  fetch(API, { method:"POST", body: new URLSearchParams({ action:"deleteItem", row:index }) })
-  .then(r => r.json())
-  .then(data => {
-    if (data.status === "success") { showNotification("Item deleted", "success"); loadItems(); }
-    else showNotification("Failed to delete item", "error");
-  });
+function closeEditModal() {
+  document.getElementById("editModal").style.display = "none";
 }
 
-function addItem() {
-  const fields = ['item','size','code','stock','type','location'];
-  const labels = ['Item name','Size/Variant','Item code','Stock quantity','Item type','Storage location'];
-  const values = fields.map(f => document.getElementById(f).value.trim());
+function saveEditItem() {
+  const index    = document.getElementById("editRowIndex").value;
+  const item     = document.getElementById("editItem").value.trim();
+  const size     = document.getElementById("editSize").value.trim();
+  const code     = document.getElementById("editCode").value.trim();
+  const stock    = document.getElementById("editStock").value.trim();
+  const type     = document.getElementById("editType").value;
+  const location = document.getElementById("editLocation").value.trim();
 
-  for (let i = 0; i < values.length; i++) {
-    if (!values[i]) { showNotification(`Please enter ${labels[i]}`, "error"); return; }
-  }
-  if (isNaN(values[3]) || parseInt(values[3]) < 0) { showNotification("Stock must be a valid number", "error"); return; }
+  if (!item)     { showNotification("Item name is required","error"); return; }
+  if (!code)     { showNotification("Item code is required","error"); return; }
+  if (stock==="") { showNotification("Stock quantity is required","error"); return; }
+  if (!type)     { showNotification("Please select item type","error"); return; }
+  if (!location) { showNotification("Storage location is required","error"); return; }
 
   const btn = event.target;
   setLoading(btn, true);
 
-  fetch(API, {
-    method: "POST",
-    body: new URLSearchParams({
-      action:"addItem", item:values[0], size:values[1], code:values[2],
-      stock:values[3], type:values[4], location:values[5],
-      owner: localStorage.getItem("userID")
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
+  // Update each field
+  const updates = [
+    { col: 1, val: item },
+    { col: 2, val: size },
+    { col: 3, val: code },
+    { col: 4, val: stock },
+    { col: 5, val: type },
+    { col: 6, val: location }
+  ];
+
+  Promise.all(updates.map(u =>
+    fetch(API, { method:"POST", body: new URLSearchParams({ action:"updateItem", row:index, col:u.col, value:u.val }) })
+    .then(r=>r.json())
+  ))
+  .then(results => {
     setLoading(btn, false);
-    if (data.status === "success") {
-      showNotification("✓ Item added!", "success");
-      fields.forEach(f => document.getElementById(f).value = "");
+    const allOk = results.every(r => r.status === "success");
+    if (allOk) {
+      showNotification("✓ Item updated!","success");
+      closeEditModal();
       loadItems();
     } else {
-      showNotification(data.message || "Failed to add item", "error");
+      showNotification("Some fields failed to update","error");
+      loadItems();
     }
   })
-  .catch(() => { setLoading(btn, false); showNotification("Error adding item", "error"); });
+  .catch(() => {
+    setLoading(btn, false);
+    showNotification("Error updating item","error");
+  });
 }
 
-// ── Borrow Tracking ───────────────────────────────
-let allBorrowRecords = [];
-let currentFilter = 'all';
+function deleteItem(index) {
+  const row = currentData[index];
+  const name = row ? row[1] : "this item";
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  fetch(API, { method:"POST", body: new URLSearchParams({ action:"deleteItem", row:index }) })
+  .then(r=>r.json())
+  .then(data => {
+    if (data.status==="success") { showNotification("Item deleted","success"); loadItems(); }
+    else showNotification("Failed to delete item","error");
+  });
+}
 
+function addItem() {
+  const item     = document.getElementById("item").value.trim();
+  const size     = document.getElementById("size").value.trim();
+  const code     = document.getElementById("code").value.trim();
+  const stock    = document.getElementById("stock").value.trim();
+  const type     = document.getElementById("type").value;
+  const location = document.getElementById("location").value.trim();
+
+  if (!item)     { showNotification("Please enter item name","error"); return; }
+  if (!code)     { showNotification("Please enter item code","error"); return; }
+  if (!stock)    { showNotification("Please enter stock quantity","error"); return; }
+  if (isNaN(stock)||parseInt(stock)<0) { showNotification("Stock must be a valid number","error"); return; }
+  if (!type)     { showNotification("Please select item type","error"); return; }
+  if (!location) { showNotification("Please enter storage location","error"); return; }
+
+  const btn = event.target;
+  setLoading(btn, true);
+
+  fetch(API, { method:"POST", body: new URLSearchParams({
+    action:"addItem", item, size, code, stock, type, location,
+    owner: localStorage.getItem("userID")
+  })})
+  .then(r=>r.json())
+  .then(data => {
+    setLoading(btn, false);
+    if (data.status==="success") {
+      showNotification("✓ Item added!","success");
+      ["item","size","code","stock","location"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("type").value = "";
+      loadItems();
+    } else showNotification(data.message||"Failed to add item","error");
+  })
+  .catch(() => { setLoading(btn, false); showNotification("Error adding item","error"); });
+}
+
+// ── Borrow Tracking ───────────────────────────────────────
 function setFilter(filter, btn) {
   currentFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -449,16 +524,16 @@ function setFilter(filter, btn) {
 
 function loadBorrowedItemsTracking() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getAllBorrows" }) })
-  .then(r => r.json())
+  .then(r=>r.json())
   .then(data => {
     allBorrowRecords = (!data || data.error) ? [] : data;
     renderBorrowerGrid();
   })
-  .catch(() => showNotification("Failed to load borrow records", "error"));
+  .catch(() => showNotification("Failed to load borrow records","error"));
 }
 
 function renderBorrowerGrid() {
-  const grid = document.getElementById("borrowerGrid");
+  const grid             = document.getElementById("borrowerGrid");
   const warningContainer = document.getElementById("warningContainer");
   warningContainer.innerHTML = "";
   grid.innerHTML = "";
@@ -468,9 +543,8 @@ function renderBorrowerGrid() {
     return;
   }
 
-  // Group records by studentName (record[2]) + studentId (record[1])
   const borrowerMap = {};
-  let totalOverdue = 0;
+  let totalOverdue  = 0;
 
   allBorrowRecords.forEach(record => {
     const studentId   = record[1];
@@ -478,36 +552,30 @@ function renderBorrowerGrid() {
     const status      = record[6];
     const returnDate  = new Date(record[5]);
     const isOverdue   = returnDate < new Date() && status === "Borrowed";
-
     if (isOverdue) totalOverdue++;
 
     const key = studentId + "||" + studentName;
     if (!borrowerMap[key]) {
-      borrowerMap[key] = { studentId, studentName, records: [], activeCount: 0, overdueCount: 0, returnedCount: 0 };
+      borrowerMap[key] = { studentId, studentName, records:[], activeCount:0, overdueCount:0, returnedCount:0 };
     }
-
     borrowerMap[key].records.push(record);
-    if (status === "Borrowed" && !isOverdue) borrowerMap[key].activeCount++;
-    if (isOverdue)                           borrowerMap[key].overdueCount++;
-    if (status === "Returned")               borrowerMap[key].returnedCount++;
+    if (status==="Borrowed" && !isOverdue) borrowerMap[key].activeCount++;
+    if (isOverdue)                         borrowerMap[key].overdueCount++;
+    if (status==="Returned")               borrowerMap[key].returnedCount++;
   });
 
-  // Overdue warning
-  if (totalOverdue > 0) {
-    warningContainer.innerHTML = `<div class="warning">⚠️ <strong>${totalOverdue} overdue item(s)!</strong> Please follow up with the borrowers.</div>`;
-  }
+  if (totalOverdue > 0)
+    warningContainer.innerHTML = `<div class="warning">⚠️ <strong>${totalOverdue} overdue item(s)!</strong> Please follow up with borrowers.</div>`;
 
-  // Update badge
-  const totalActive = Object.values(borrowerMap).reduce((s, b) => s + b.activeCount + b.overdueCount, 0);
+  const totalActive = Object.values(borrowerMap).reduce((s,b)=>s+b.activeCount+b.overdueCount,0);
   const badge = document.getElementById('borrowedCount');
-  if (totalActive > 0) { badge.textContent = totalActive; badge.style.display = 'inline-block'; }
-  else badge.style.display = 'none';
+  if (totalActive > 0) { badge.textContent = totalActive; badge.style.display='inline-block'; }
+  else badge.style.display='none';
 
-  // Filter
   const entries = Object.values(borrowerMap).filter(b => {
-    if (currentFilter === 'borrowed') return b.activeCount > 0;
-    if (currentFilter === 'returned') return b.returnedCount > 0 && b.activeCount === 0 && b.overdueCount === 0;
-    if (currentFilter === 'overdue')  return b.overdueCount > 0;
+    if (currentFilter==='borrowed') return b.activeCount>0;
+    if (currentFilter==='returned') return b.returnedCount>0 && b.activeCount===0 && b.overdueCount===0;
+    if (currentFilter==='overdue')  return b.overdueCount>0;
     return true;
   });
 
@@ -516,61 +584,41 @@ function renderBorrowerGrid() {
     return;
   }
 
-  // Sort: overdue first, then active, then returned
-  entries.sort((a, b) => {
-    const scoreA = a.overdueCount > 0 ? 2 : a.activeCount > 0 ? 1 : 0;
-    const scoreB = b.overdueCount > 0 ? 2 : b.activeCount > 0 ? 1 : 0;
-    return scoreB - scoreA;
+  entries.sort((a,b) => {
+    const sa = a.overdueCount>0?2:a.activeCount>0?1:0;
+    const sb = b.overdueCount>0?2:b.activeCount>0?1:0;
+    return sb-sa;
   });
 
-  // Render borrower cards
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;';
+  wrapper.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;';
 
   entries.forEach(b => {
     const hasOverdue = b.overdueCount > 0;
-    const hasActive  = b.activeCount > 0;
+    const hasActive  = b.activeCount  > 0;
     const totalItems = b.activeCount + b.overdueCount + b.returnedCount;
-
-    let statusColor = 'var(--text-muted)';
-    let statusLabel = `${b.returnedCount} returned`;
-    let borderColor = 'var(--border)';
-    let bgColor     = 'var(--surface)';
-    let pill        = '';
-
+    let statusColor='var(--text-muted)', statusLabel=`${b.returnedCount} returned`, borderColor='var(--border)', bgColor='var(--surface)', pill='';
     if (hasOverdue) {
-      statusColor = 'var(--danger)';
-      statusLabel = `${b.overdueCount} OVERDUE`;
-      borderColor = 'var(--danger)';
-      bgColor     = '#fff5f5';
-      pill = `<span style="background:#fde8e8;color:var(--danger);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">⚠️ OVERDUE</span>`;
+      statusColor='var(--danger)'; statusLabel=`${b.overdueCount} OVERDUE`; borderColor='var(--danger)'; bgColor='#fff5f5';
+      pill=`<span style="background:#fde8e8;color:var(--danger);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">⚠️ OVERDUE</span>`;
     } else if (hasActive) {
-      statusColor = 'var(--success)';
-      statusLabel = `${b.activeCount} active borrow${b.activeCount > 1 ? 's' : ''}`;
-      borderColor = 'var(--primary)';
-      bgColor     = '#f0faf6';
-      pill = `<span style="background:#d4f3e8;color:var(--success);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">Active</span>`;
+      statusColor='var(--success)'; statusLabel=`${b.activeCount} active borrow${b.activeCount>1?'s':''}`; borderColor='var(--primary)'; bgColor='#f0faf6';
+      pill=`<span style="background:#d4f3e8;color:var(--success);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">Active</span>`;
     } else {
-      pill = `<span style="background:#e8f4ff;color:#1a5fa0;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">✓ All Returned</span>`;
+      pill=`<span style="background:#e8f4ff;color:#1a5fa0;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">✓ All Returned</span>`;
     }
 
     const card = document.createElement('div');
-    card.className = 'borrower-card';
-    card.style.cssText = `background:${bgColor}; border:1.5px solid ${borderColor}; border-radius:12px; padding:16px 18px; cursor:pointer; transition:all 0.2s ease;`;
+    card.style.cssText = `background:${bgColor};border:1.5px solid ${borderColor};border-radius:12px;padding:16px 18px;cursor:pointer;transition:all 0.2s ease;`;
     card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-        <div style="font-size:32px;line-height:1;">👤</div>
-        ${pill}
-      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;"><div style="font-size:32px;line-height:1;">👤</div>${pill}</div>
       <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:4px;">${b.studentName}</div>
       <div style="font-size:12px;color:${statusColor};font-weight:600;">${statusLabel}</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${totalItems} total record${totalItems > 1 ? 's' : ''}</div>
-      <div style="margin-top:12px;font-size:12px;color:var(--primary-light);font-weight:600;">Tap to view details →</div>
-    `;
-    card.onmouseover = () => { card.style.transform = 'translateY(-3px)'; card.style.boxShadow = '0 8px 24px rgba(13,79,79,0.12)'; };
-    card.onmouseout  = () => { card.style.transform = '';                  card.style.boxShadow = ''; };
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${totalItems} total record${totalItems>1?'s':''}</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--primary-light);font-weight:600;">Tap to view details →</div>`;
+    card.onmouseover = () => { card.style.transform='translateY(-3px)'; card.style.boxShadow='0 8px 24px rgba(13,79,79,0.12)'; };
+    card.onmouseout  = () => { card.style.transform=''; card.style.boxShadow=''; };
     card.onclick = () => openDetailModal(b);
-
     wrapper.appendChild(card);
   });
 
@@ -580,12 +628,9 @@ function renderBorrowerGrid() {
 function openDetailModal(borrower) {
   document.getElementById("detailModalTitle").textContent = `👤 ${borrower.studentName}`;
   const body = document.getElementById("detailModalBody");
-  body.innerHTML = "";
 
-  // Separate active/overdue vs returned
-  const active   = borrower.records.filter(r => r[6] === "Borrowed");
-  const returned = borrower.records.filter(r => r[6] === "Returned");
-
+  const active   = borrower.records.filter(r=>r[6]==="Borrowed");
+  const returned = borrower.records.filter(r=>r[6]==="Returned");
   let html = "";
 
   if (active.length > 0) {
@@ -593,22 +638,22 @@ function openDetailModal(borrower) {
     active.forEach(r => {
       const returnDate = new Date(r[5]);
       const isOverdue  = returnDate < new Date();
-      const daysOverdue = isOverdue ? Math.floor((new Date() - returnDate) / 86400000) : 0;
+      const daysOver   = isOverdue ? Math.floor((new Date()-returnDate)/86400000) : 0;
       html += `
-        <div style="background:${isOverdue ? '#fff5f5' : '#f0faf6'};border:1px solid ${isOverdue ? '#f5c6c6' : '#b8e8d4'};border-left:4px solid ${isOverdue ? 'var(--danger)' : 'var(--success)'};border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+        <div style="background:${isOverdue?'#fff5f5':'#f0faf6'};border:1px solid ${isOverdue?'#f5c6c6':'#b8e8d4'};border-left:4px solid ${isOverdue?'var(--danger)':'var(--success)'};border-radius:10px;padding:14px 16px;margin-bottom:10px;">
           <div style="font-weight:700;color:var(--primary);font-size:14px;margin-bottom:8px;">📦 ${r[3]}</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:2;">
             <div>📅 <strong>Borrowed:</strong> ${new Date(r[4]).toLocaleString()}</div>
-            <div>⏰ <strong>Return by:</strong> <span style="color:${isOverdue ? 'var(--danger)' : 'inherit'};font-weight:${isOverdue ? '700' : '400'};">${returnDate.toLocaleString()}</span></div>
-            ${isOverdue ? `<div style="color:var(--danger);font-weight:700;">⚠️ ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue!</div>` : ''}
+            <div>⏰ <strong>Return by:</strong> <span style="color:${isOverdue?'var(--danger)':'inherit'};font-weight:${isOverdue?'700':'400'};">${returnDate.toLocaleString()}</span></div>
+            ${isOverdue?`<div style="color:var(--danger);font-weight:700;">⚠️ ${daysOver} day${daysOver>1?'s':''} overdue!</div>`:''}
           </div>
-          <span class="status-badge ${isOverdue ? 'status-overdue' : 'status-borrowed'}" style="margin-top:8px;">${isOverdue ? '⚠️ Overdue' : 'Borrowed'}</span>
+          <span class="status-badge ${isOverdue?'status-overdue':'status-borrowed'}" style="margin-top:8px;">${isOverdue?'⚠️ Overdue':'Borrowed'}</span>
         </div>`;
     });
   }
 
   if (returned.length > 0) {
-    if (active.length > 0) html += `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">`;
+    if (active.length>0) html += `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">`;
     html += `<h4 style="color:var(--primary);font-size:14px;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">✅ Returned Items</h4>`;
     returned.forEach(r => {
       html += `
@@ -623,17 +668,12 @@ function openDetailModal(borrower) {
     });
   }
 
-  if (html === "") {
-    html = "<div class='empty-state'><div class='icon'>📭</div>No records found</div>";
-  }
-
+  if (!html) html = "<div class='empty-state'><div class='icon'>📭</div>No records found</div>";
   body.innerHTML = html;
   document.getElementById("borrowerDetailModal").style.display = "flex";
 }
 
-function closeDetailModal() {
-  document.getElementById("borrowerDetailModal").style.display = "none";
-}
+function closeDetailModal() { document.getElementById("borrowerDetailModal").style.display = "none"; }
 
 checkAuth();
 loadItems();
