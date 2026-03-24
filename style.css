@@ -232,6 +232,7 @@ body.dashboard-body {
   background: rgba(8,46,46,0.55);
   backdrop-filter: blur(4px);
   animation: fadeIn 0.25s ease;
+  /* Centering always present so style.display="flex" works correctly */
   justify-content: center;
   align-items: center;
   padding: 20px;

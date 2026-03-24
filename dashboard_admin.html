@@ -5,6 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — CHS VITAL System</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Modal centering fix — style.display="flex" needs these pre-set */
+    .modal { justify-content: center; align-items: center; padding: 20px; }
+
+    /* Filter buttons */
+    .filter-btn {
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  </style>
 </head>
 <body class="dashboard-body">
 
@@ -148,13 +168,26 @@
       <h3>🔄 Borrow Tracking</h3>
       <div id="warningContainer"></div>
 
-      <h4 style="color: var(--primary); margin: 16px 0 10px; font-size: 15px;">📤 Currently Borrowed</h4>
-      <div id="borrowedList"></div>
+      <!-- Filter toggle -->
+      <div style="display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;">
+        <button class="filter-btn active" onclick="setFilter('all', this)">All Borrowers</button>
+        <button class="filter-btn" onclick="setFilter('borrowed', this)">📤 Active</button>
+        <button class="filter-btn" onclick="setFilter('returned', this)">✅ Returned</button>
+        <button class="filter-btn" onclick="setFilter('overdue', this)">⚠️ Overdue</button>
+      </div>
 
-      <hr class="section-divider">
+      <div id="borrowerGrid"></div>
+    </div>
+  </div>
 
-      <h4 style="color: var(--primary); margin: 10px 0; font-size: 15px;">✅ Returned Items</h4>
-      <div id="returnedList"></div>
+  <!-- Borrower Detail Modal -->
+  <div id="borrowerDetailModal" class="modal">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3 id="detailModalTitle">Borrower Details</h3>
+        <button class="close-btn" onclick="closeDetailModal()">✕</button>
+      </div>
+      <div class="modal-body" id="detailModalBody"></div>
     </div>
   </div>
 
@@ -307,7 +340,7 @@ function updatePassword() {
 
 // Modal close on backdrop click
 document.addEventListener("DOMContentLoaded", () => {
-  ["profileModal","passwordModal"].forEach(id => {
+  ["profileModal","passwordModal","borrowerDetailModal"].forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener("click", e => { if (e.target === el) el.style.display = "none"; });
   });
@@ -404,77 +437,202 @@ function addItem() {
 }
 
 // ── Borrow Tracking ───────────────────────────────
+let allBorrowRecords = [];
+let currentFilter = 'all';
+
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBorrowerGrid();
+}
+
 function loadBorrowedItemsTracking() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getAllBorrows" }) })
   .then(r => r.json())
   .then(data => {
-    const borrowedList   = document.getElementById("borrowedList");
-    const returnedList   = document.getElementById("returnedList");
-    const warningContainer = document.getElementById("warningContainer");
-
-    borrowedList.innerHTML = returnedList.innerHTML = warningContainer.innerHTML = "";
-
-    if (!data || data.length === 0 || data.error) {
-      borrowedList.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No borrowed items</div>";
-      return;
-    }
-
-    let overdueCount = 0, borrowCount = 0;
-
-    data.forEach(record => {
-      const student     = record[1];
-      const studentName = record[2];
-      const items       = record[3];
-      const borrowDate  = new Date(record[4]);
-      const returnDate  = new Date(record[5]);
-      const status      = record[6];
-      const lentByName  = record[8] || record[7] || "—";
-      const now         = new Date();
-      const isOverdue   = returnDate < now && status === "Borrowed";
-
-      if (isOverdue)         overdueCount++;
-      if (status === "Borrowed") borrowCount++;
-
-      if (status === "Borrowed") {
-        borrowedList.innerHTML += `
-          <div class="borrow-record ${isOverdue ? 'overdue' : ''}">
-            <div class="borrow-header">${items}${isOverdue ? ' <span style="color:var(--danger);">⚠️ OVERDUE</span>' : ''}</div>
-            <div class="borrow-info">
-              <p><strong>Borrower:</strong> ${studentName}</p>
-              <p><strong>Lent by:</strong> ${lentByName}</p>
-              <p><strong>Borrowed:</strong> ${borrowDate.toLocaleString()}</p>
-              <p><strong>Return by:</strong> ${returnDate.toLocaleString()}</p>
-              <span class="status-badge status-borrowed">Borrowed</span>
-            </div>
-          </div>`;
-      } else if (status === "Returned") {
-        returnedList.innerHTML += `
-          <div class="borrow-record">
-            <div class="borrow-header">${items}</div>
-            <div class="borrow-info">
-              <p><strong>Borrower:</strong> ${studentName}</p>
-              <p><strong>Lent by:</strong> ${lentByName}</p>
-              <p><strong>Returned:</strong> ${borrowDate.toLocaleString()}</p>
-              <span class="status-badge status-returned">✓ Returned</span>
-            </div>
-          </div>`;
-      }
-    });
-
-    if (borrowCount > 0) {
-      const badge = document.getElementById('borrowedCount');
-      badge.textContent = borrowCount;
-      badge.style.display = 'inline-block';
-    }
-
-    if (overdueCount > 0) {
-      warningContainer.innerHTML = `<div class="warning">⚠️ <strong>${overdueCount} overdue item(s)!</strong> Please follow up with the borrowers.</div>`;
-    }
-
-    if (!borrowedList.innerHTML) borrowedList.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
-    if (!returnedList.innerHTML) returnedList.innerHTML = "<div class='empty-state'><div class='icon'>✅</div>No returned items yet</div>";
+    allBorrowRecords = (!data || data.error) ? [] : data;
+    renderBorrowerGrid();
   })
   .catch(() => showNotification("Failed to load borrow records", "error"));
+}
+
+function renderBorrowerGrid() {
+  const grid = document.getElementById("borrowerGrid");
+  const warningContainer = document.getElementById("warningContainer");
+  warningContainer.innerHTML = "";
+  grid.innerHTML = "";
+
+  if (allBorrowRecords.length === 0) {
+    grid.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No borrow records found</div>";
+    return;
+  }
+
+  // Group records by studentName (record[2]) + studentId (record[1])
+  const borrowerMap = {};
+  let totalOverdue = 0;
+
+  allBorrowRecords.forEach(record => {
+    const studentId   = record[1];
+    const studentName = record[2] || "Unknown";
+    const status      = record[6];
+    const returnDate  = new Date(record[5]);
+    const isOverdue   = returnDate < new Date() && status === "Borrowed";
+
+    if (isOverdue) totalOverdue++;
+
+    const key = studentId + "||" + studentName;
+    if (!borrowerMap[key]) {
+      borrowerMap[key] = { studentId, studentName, records: [], activeCount: 0, overdueCount: 0, returnedCount: 0 };
+    }
+
+    borrowerMap[key].records.push(record);
+    if (status === "Borrowed" && !isOverdue) borrowerMap[key].activeCount++;
+    if (isOverdue)                           borrowerMap[key].overdueCount++;
+    if (status === "Returned")               borrowerMap[key].returnedCount++;
+  });
+
+  // Overdue warning
+  if (totalOverdue > 0) {
+    warningContainer.innerHTML = `<div class="warning">⚠️ <strong>${totalOverdue} overdue item(s)!</strong> Please follow up with the borrowers.</div>`;
+  }
+
+  // Update badge
+  const totalActive = Object.values(borrowerMap).reduce((s, b) => s + b.activeCount + b.overdueCount, 0);
+  const badge = document.getElementById('borrowedCount');
+  if (totalActive > 0) { badge.textContent = totalActive; badge.style.display = 'inline-block'; }
+  else badge.style.display = 'none';
+
+  // Filter
+  const entries = Object.values(borrowerMap).filter(b => {
+    if (currentFilter === 'borrowed') return b.activeCount > 0;
+    if (currentFilter === 'returned') return b.returnedCount > 0 && b.activeCount === 0 && b.overdueCount === 0;
+    if (currentFilter === 'overdue')  return b.overdueCount > 0;
+    return true;
+  });
+
+  if (entries.length === 0) {
+    grid.innerHTML = "<div class='empty-state'><div class='icon'>🔍</div>No borrowers match this filter</div>";
+    return;
+  }
+
+  // Sort: overdue first, then active, then returned
+  entries.sort((a, b) => {
+    const scoreA = a.overdueCount > 0 ? 2 : a.activeCount > 0 ? 1 : 0;
+    const scoreB = b.overdueCount > 0 ? 2 : b.activeCount > 0 ? 1 : 0;
+    return scoreB - scoreA;
+  });
+
+  // Render borrower cards
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:12px;';
+
+  entries.forEach(b => {
+    const hasOverdue = b.overdueCount > 0;
+    const hasActive  = b.activeCount > 0;
+    const totalItems = b.activeCount + b.overdueCount + b.returnedCount;
+
+    let statusColor = 'var(--text-muted)';
+    let statusLabel = `${b.returnedCount} returned`;
+    let borderColor = 'var(--border)';
+    let bgColor     = 'var(--surface)';
+    let pill        = '';
+
+    if (hasOverdue) {
+      statusColor = 'var(--danger)';
+      statusLabel = `${b.overdueCount} OVERDUE`;
+      borderColor = 'var(--danger)';
+      bgColor     = '#fff5f5';
+      pill = `<span style="background:#fde8e8;color:var(--danger);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">⚠️ OVERDUE</span>`;
+    } else if (hasActive) {
+      statusColor = 'var(--success)';
+      statusLabel = `${b.activeCount} active borrow${b.activeCount > 1 ? 's' : ''}`;
+      borderColor = 'var(--primary)';
+      bgColor     = '#f0faf6';
+      pill = `<span style="background:#d4f3e8;color:var(--success);font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">Active</span>`;
+    } else {
+      pill = `<span style="background:#e8f4ff;color:#1a5fa0;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">✓ All Returned</span>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'borrower-card';
+    card.style.cssText = `background:${bgColor}; border:1.5px solid ${borderColor}; border-radius:12px; padding:16px 18px; cursor:pointer; transition:all 0.2s ease;`;
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div style="font-size:32px;line-height:1;">👤</div>
+        ${pill}
+      </div>
+      <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:4px;">${b.studentName}</div>
+      <div style="font-size:12px;color:${statusColor};font-weight:600;">${statusLabel}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${totalItems} total record${totalItems > 1 ? 's' : ''}</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--primary-light);font-weight:600;">Tap to view details →</div>
+    `;
+    card.onmouseover = () => { card.style.transform = 'translateY(-3px)'; card.style.boxShadow = '0 8px 24px rgba(13,79,79,0.12)'; };
+    card.onmouseout  = () => { card.style.transform = '';                  card.style.boxShadow = ''; };
+    card.onclick = () => openDetailModal(b);
+
+    wrapper.appendChild(card);
+  });
+
+  grid.appendChild(wrapper);
+}
+
+function openDetailModal(borrower) {
+  document.getElementById("detailModalTitle").textContent = `👤 ${borrower.studentName}`;
+  const body = document.getElementById("detailModalBody");
+  body.innerHTML = "";
+
+  // Separate active/overdue vs returned
+  const active   = borrower.records.filter(r => r[6] === "Borrowed");
+  const returned = borrower.records.filter(r => r[6] === "Returned");
+
+  let html = "";
+
+  if (active.length > 0) {
+    html += `<h4 style="color:var(--primary);font-size:14px;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">📤 Currently Borrowed</h4>`;
+    active.forEach(r => {
+      const returnDate = new Date(r[5]);
+      const isOverdue  = returnDate < new Date();
+      const daysOverdue = isOverdue ? Math.floor((new Date() - returnDate) / 86400000) : 0;
+      html += `
+        <div style="background:${isOverdue ? '#fff5f5' : '#f0faf6'};border:1px solid ${isOverdue ? '#f5c6c6' : '#b8e8d4'};border-left:4px solid ${isOverdue ? 'var(--danger)' : 'var(--success)'};border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+          <div style="font-weight:700;color:var(--primary);font-size:14px;margin-bottom:8px;">📦 ${r[3]}</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:2;">
+            <div>📅 <strong>Borrowed:</strong> ${new Date(r[4]).toLocaleString()}</div>
+            <div>⏰ <strong>Return by:</strong> <span style="color:${isOverdue ? 'var(--danger)' : 'inherit'};font-weight:${isOverdue ? '700' : '400'};">${returnDate.toLocaleString()}</span></div>
+            ${isOverdue ? `<div style="color:var(--danger);font-weight:700;">⚠️ ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} overdue!</div>` : ''}
+          </div>
+          <span class="status-badge ${isOverdue ? 'status-overdue' : 'status-borrowed'}" style="margin-top:8px;">${isOverdue ? '⚠️ Overdue' : 'Borrowed'}</span>
+        </div>`;
+    });
+  }
+
+  if (returned.length > 0) {
+    if (active.length > 0) html += `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">`;
+    html += `<h4 style="color:var(--primary);font-size:14px;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">✅ Returned Items</h4>`;
+    returned.forEach(r => {
+      html += `
+        <div style="background:#f4f7f6;border:1px solid var(--border);border-left:4px solid var(--success);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
+          <div style="font-weight:700;color:var(--primary);font-size:14px;margin-bottom:8px;">📦 ${r[3]}</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:2;">
+            <div>📅 <strong>Borrowed:</strong> ${new Date(r[4]).toLocaleString()}</div>
+            <div>📅 <strong>Due date:</strong> ${new Date(r[5]).toLocaleString()}</div>
+          </div>
+          <span class="status-badge status-returned" style="margin-top:8px;">✓ Returned</span>
+        </div>`;
+    });
+  }
+
+  if (html === "") {
+    html = "<div class='empty-state'><div class='icon'>📭</div>No records found</div>";
+  }
+
+  body.innerHTML = html;
+  document.getElementById("borrowerDetailModal").style.display = "flex";
+}
+
+function closeDetailModal() {
+  document.getElementById("borrowerDetailModal").style.display = "none";
 }
 
 checkAuth();
