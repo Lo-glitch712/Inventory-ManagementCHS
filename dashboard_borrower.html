@@ -6,16 +6,128 @@
   <title>Borrower Dashboard — CHS VITAL System</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <style>
+    .borrow-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin-bottom: 14px;
+    }
+    .borrow-card.overdue {
+      border-left-color: var(--danger);
+      background: #fff8f8;
+    }
+    .borrow-card-title {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+    .borrow-card.overdue .borrow-card-title { color: var(--danger); }
+    .borrow-card-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      line-height: 1.7;
+    }
+    .items-group {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+    }
+    .items-group-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .items-group ul, .return-modal-items ul, .qr-items-summary ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .items-group ul li, .return-modal-items ul li, .qr-items-summary ul li {
+      font-size: 14px;
+      color: var(--text-main);
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .items-group ul li:last-child,
+    .return-modal-items ul li:last-child,
+    .qr-items-summary ul li:last-child { border-bottom: none; }
+    .items-group ul li::before    { content: "•"; color: var(--primary); font-weight: 900; font-size: 16px; line-height: 1; }
+    .return-modal-items ul li::before { content: "📦"; font-size: 13px; }
+    .qr-items-summary ul li::before   { content: "✓"; color: var(--success); font-weight: 700; }
+ 
+    .borrow-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+ 
+    .qr-result-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .qr-result-box .qr-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .qr-result-box .qr-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .qr-items-summary {
+      background: var(--surface-alt);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 12px 0 16px;
+      text-align: left;
+    }
+    .qr-items-summary p {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .return-modal-items {
+      background: var(--surface-alt);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 12px 0 16px;
+      text-align: left;
+    }
+    .return-modal-items p {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+  </style>
 </head>
 <body class="dashboard-body">
-
-<!-- Page Header -->
+ 
 <div class="page-header">
   <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1>
   <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
 </div>
-
-<!-- Navbar -->
+ 
 <div class="navbar">
   <h1>📦 Borrower Dashboard</h1>
   <div class="navbar-right">
@@ -23,8 +135,7 @@
     <button class="menu-toggle" onclick="toggleMenu()">☰</button>
   </div>
 </div>
-
-<!-- Side Menu -->
+ 
 <div id="sideMenu" class="side-menu">
   <button class="close-btn" onclick="toggleMenu()">✕</button>
   <div class="side-menu-header">
@@ -34,11 +145,11 @@
   <div class="menu-content">
     <button onclick="openProfile()" class="menu-btn">👤 My Profile</button>
     <button onclick="changePassword()" class="menu-btn">🔐 Change Password</button>
-    <hr style="margin: 10px 0; border: none; border-top: 1px solid rgba(255,255,255,0.12);">
+    <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.12);">
     <button onclick="logout()" class="menu-btn danger">🚪 Logout</button>
   </div>
 </div>
-
+ 
 <!-- Profile Modal -->
 <div id="profileModal" class="modal">
   <div class="modal-content">
@@ -47,109 +158,96 @@
       <button class="close-btn" onclick="closeProfile()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>Full Name</label>
-        <input type="text" id="profileName" readonly style="background:#f4f7f6; color:#777;">
-      </div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="profileEmail">
-      </div>
-      <div class="form-group">
-        <label>Contact Number</label>
-        <input type="tel" id="profileContact">
-      </div>
-      <div class="form-group">
-        <label>Department</label>
-        <input type="text" id="profileDepartment">
-      </div>
-      <div class="form-group">
-        <label>Year Level</label>
-        <input type="number" id="profileYear">
-      </div>
+      <div class="form-group"><label>Full Name</label><input type="text" id="profileName" readonly style="background:#f4f7f6;color:#777;"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="profileEmail"></div>
+      <div class="form-group"><label>Contact Number</label><input type="tel" id="profileContact"></div>
+      <div class="form-group"><label>Department</label><input type="text" id="profileDepartment"></div>
+      <div class="form-group"><label>Year Level</label><input type="number" id="profileYear"></div>
       <button onclick="saveProfile()">💾 Save Changes</button>
     </div>
   </div>
 </div>
-
+ 
 <!-- Password Modal -->
 <div id="passwordModal" class="modal">
-  <div class="modal-content" style="max-width: 400px;">
+  <div class="modal-content" style="max-width:400px;">
     <div class="modal-header">
       <h3>🔐 Change Password</h3>
       <button class="close-btn" onclick="closePassword()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>Current Password</label>
-        <input type="password" id="currentPassword" placeholder="Enter current password">
-      </div>
-      <div class="form-group">
-        <label>New Password</label>
-        <input type="password" id="newPassword" placeholder="At least 6 characters" minlength="6">
-      </div>
-      <div class="form-group">
-        <label>Confirm New Password</label>
-        <input type="password" id="confirmPassword" placeholder="Repeat new password">
-      </div>
+      <div class="form-group"><label>Current Password</label><input type="password" id="currentPassword" placeholder="Enter current password"></div>
+      <div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="At least 6 characters" minlength="6"></div>
+      <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password"></div>
       <button onclick="updatePassword()">✓ Update Password</button>
     </div>
   </div>
 </div>
-
+ 
 <!-- Return QR Modal -->
 <div id="returnModal" class="modal">
-  <div class="modal-content" style="max-width: 440px;">
+  <div class="modal-content" style="max-width:460px;">
     <div class="modal-header">
-      <h3>📥 Return Item</h3>
+      <h3>📥 Return QR Code</h3>
       <button class="close-btn" onclick="closeReturnModal()">✕</button>
     </div>
-    <div class="modal-body" style="text-align: center;">
-      <p style="font-weight:700; color:var(--primary); margin-bottom:6px;" id="returnItemName"></p>
-      <p style="color:var(--text-muted); font-size:13px; margin-bottom:18px;">Show this QR code at the counter to process your return.</p>
-      <canvas id="returnQRcode"></canvas>
-      <p style="color:#aaa; font-size:12px; margin-top:12px;">Scan → stock will be restored automatically</p>
+    <div class="modal-body" style="text-align:center;">
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">
+        Show this QR code to the instructor or student assistant to process your return.
+      </p>
+      <div class="return-modal-items" id="returnModalItems">
+        <p>Items to Return</p>
+        <ul id="returnItemsList"></ul>
+      </div>
+      <canvas id="returnQRcode" style="display:block;margin:0 auto;"></canvas>
+      <p style="color:#bbb;font-size:12px;margin-top:12px;">Stock will be restored automatically after scanning</p>
+      <button onclick="saveReturnQR()" style="width:auto;padding:10px 24px;margin-top:12px;background:var(--primary);">
+        💾 Save QR Image
+      </button>
     </div>
   </div>
 </div>
-
+ 
 <!-- Dashboard Content -->
 <div class="dashboard-main">
-
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('borrow-tab', this)">📦 Borrow Items</button>
     <button class="tab-btn" onclick="switchTab('borrowed-tab', this)">🔄 My Borrows</button>
     <button class="tab-btn" onclick="switchTab('history-tab', this)">📋 History</button>
   </div>
-
+ 
   <!-- TAB: Borrow -->
   <div id="borrow-tab" class="tab-content active">
     <div class="card">
       <h3>📦 Select Items to Borrow</h3>
-
       <div class="form-group">
         <label>🔍 Search Items</label>
-        <input id="searchItems" type="text" placeholder="Search by name or code..." oninput="filterItems()">
+        <input id="searchItems" type="text" placeholder="Search by name..." oninput="filterItems()">
       </div>
-
       <div id="itemsList" class="items-list"></div>
-
-      <div class="form-group" style="margin-top: 16px;">
+      <div class="form-group" style="margin-top:16px;">
         <label>Expected Return Date &amp; Time</label>
         <input type="datetime-local" id="returnDate" required>
       </div>
-
       <button onclick="generateQR()">🔖 Generate QR Code</button>
-
-      <div class="qr-container" id="qrContainer" style="display:none;">
-        <h4 style="color:var(--primary); margin-bottom:12px;">Your Borrow QR Code</h4>
-        <canvas id="qrcode"></canvas>
-        <p style="color:var(--text-muted); font-size:13px; margin-top:12px;">📱 Show this to the instructor to confirm your borrow</p>
-        <button onclick="saveQRCode()" style="width:auto; padding:10px 24px; margin-top:12px; background:var(--success);">💾 Save QR Code</button>
+ 
+      <!-- QR Result Box (shown after generating) -->
+      <div id="qrResultBox" class="qr-result-box" style="display:none;">
+        <p class="qr-title">Borrow QR Code</p>
+        <p class="qr-subtitle">Show this to the instructor or SA at the counter</p>
+        <canvas id="qrcode" style="display:block;margin:0 auto;"></canvas>
+        <div class="qr-items-summary">
+          <p>Items Selected</p>
+          <ul id="qrItemsList"></ul>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
+          <button onclick="saveQRCode()" style="width:auto;padding:10px 22px;background:var(--success);margin-top:0;">💾 Save QR Image</button>
+          <button onclick="resetBorrowForm()" style="width:auto;padding:10px 22px;background:var(--surface-alt);color:var(--text-main);border:1.5px solid var(--border);margin-top:0;">↩ New Borrow</button>
+        </div>
       </div>
     </div>
   </div>
-
+ 
   <!-- TAB: My Borrows -->
   <div id="borrowed-tab" class="tab-content">
     <div class="card">
@@ -157,7 +255,7 @@
       <div id="borrowedItemsList"></div>
     </div>
   </div>
-
+ 
   <!-- TAB: History -->
   <div id="history-tab" class="tab-content">
     <div class="card">
@@ -165,39 +263,36 @@
       <div id="historyList"></div>
     </div>
   </div>
-
-</div><!-- /dashboard-main -->
-
+</div>
+ 
 <script src="app.js"></script>
 <script>
 let selectedItems = [];
-
-// ── Auth ─────────────────────────────────────────
+let itemNameMap   = {};   // itemId (string) → display name
+ 
+// ── Auth ──────────────────────────────────────────────────
 function checkAuth() {
-  const id   = localStorage.getItem("userID");
-  const name = localStorage.getItem("userName");
+  const id = localStorage.getItem("userID");
   if (!id) { window.location = "login.html"; return; }
-  document.getElementById("userName").textContent     = name || "User";
-  document.getElementById("sideUserName").textContent = name || "User";
-
-  ["profileModal","passwordModal","returnModal"].forEach(id => {
-    const el = document.getElementById(id);
+  const name = localStorage.getItem("userName") || "User";
+  document.getElementById("userName").textContent     = name;
+  document.getElementById("sideUserName").textContent = name;
+  ["profileModal","passwordModal","returnModal"].forEach(mid => {
+    const el = document.getElementById(mid);
     el.addEventListener("click", e => { if (e.target === el) el.style.display = "none"; });
   });
 }
-
-// ── Side Menu ────────────────────────────────────
+ 
+// ── Side Menu ─────────────────────────────────────────────
 function toggleMenu() { document.getElementById("sideMenu").classList.toggle("active"); }
-
-document.addEventListener("click", function(e) {
-  const menu   = document.getElementById("sideMenu");
-  const toggle = document.querySelector(".menu-toggle");
-  if (menu && !menu.contains(e.target) && toggle && !toggle.contains(e.target)) {
+document.addEventListener("click", e => {
+  const menu = document.getElementById("sideMenu");
+  const tog  = document.querySelector(".menu-toggle");
+  if (menu && !menu.contains(e.target) && tog && !tog.contains(e.target))
     menu.classList.remove("active");
-  }
 });
-
-// ── Tab Switching ────────────────────────────────
+ 
+// ── Tabs ──────────────────────────────────────────────────
 function switchTab(tabName, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -207,12 +302,11 @@ function switchTab(tabName, btn) {
   if (tabName === 'history-tab')  loadBorrowHistory();
   if (tabName === 'borrow-tab')   filterItems();
 }
-
-// ── Profile ──────────────────────────────────────
+ 
+// ── Profile ───────────────────────────────────────────────
 function openProfile() {
   document.getElementById("sideMenu").classList.remove("active");
   document.getElementById("profileModal").style.display = "flex";
-
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getUserProfile", userID: localStorage.getItem("userID") }) })
   .then(r => r.json())
   .then(data => {
@@ -225,275 +319,411 @@ function openProfile() {
     }
   });
 }
-
 function closeProfile() { document.getElementById("profileModal").style.display = "none"; }
-
 function saveProfile() {
-  fetch(API, {
-    method:"POST",
-    body: new URLSearchParams({
-      action:     "updateUserProfile",
-      userID:     localStorage.getItem("userID"),
-      email:      document.getElementById("profileEmail").value,
-      contact:    document.getElementById("profileContact").value,
-      department: document.getElementById("profileDepartment").value,
-      year:       document.getElementById("profileYear").value
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.status === "success") { showNotification("✓ Profile updated!", "success"); closeProfile(); }
-    else showNotification("Failed to update profile", "error");
+  fetch(API, { method:"POST", body: new URLSearchParams({
+    action:"updateUserProfile", userID:localStorage.getItem("userID"),
+    email:document.getElementById("profileEmail").value,
+    contact:document.getElementById("profileContact").value,
+    department:document.getElementById("profileDepartment").value,
+    year:document.getElementById("profileYear").value
+  })})
+  .then(r=>r.json()).then(data => {
+    if (data.status==="success") { showNotification("✓ Profile updated!","success"); closeProfile(); }
+    else showNotification("Failed to update profile","error");
   });
 }
-
-// ── Password ─────────────────────────────────────
+ 
+// ── Password ──────────────────────────────────────────────
 function changePassword() {
   document.getElementById("sideMenu").classList.remove("active");
   document.getElementById("passwordModal").style.display = "flex";
 }
-
 function closePassword() {
   document.getElementById("passwordModal").style.display = "none";
   ["currentPassword","newPassword","confirmPassword"].forEach(id => document.getElementById(id).value = "");
 }
-
 function updatePassword() {
   const np = document.getElementById("newPassword").value;
   const cp = document.getElementById("confirmPassword").value;
-  if (np !== cp)     { showNotification("Passwords do not match", "error"); return; }
-  if (np.length < 6) { showNotification("Password must be at least 6 characters", "error"); return; }
-
-  fetch(API, {
-    method:"POST",
-    body: new URLSearchParams({
-      action: "changePassword",
-      userID: localStorage.getItem("userID"),
-      currentPassword: document.getElementById("currentPassword").value,
-      newPassword: np
-    })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.status === "success") { showNotification("✓ Password changed!", "success"); closePassword(); }
-    else showNotification(data.message || "Failed to change password", "error");
+  if (np !== cp)     { showNotification("Passwords do not match","error"); return; }
+  if (np.length < 6) { showNotification("Password must be at least 6 characters","error"); return; }
+  fetch(API, { method:"POST", body: new URLSearchParams({
+    action:"changePassword", userID:localStorage.getItem("userID"),
+    currentPassword:document.getElementById("currentPassword").value, newPassword:np
+  })})
+  .then(r=>r.json()).then(data => {
+    if (data.status==="success") { showNotification("✓ Password changed!","success"); closePassword(); }
+    else showNotification(data.message||"Failed to change password","error");
   });
 }
-
-// ── Return QR ────────────────────────────────────
-function closeReturnModal() { document.getElementById("returnModal").style.display = "none"; }
-
-function showReturnQR(itemName, qrData) {
-  const modal = document.getElementById("returnModal");
-  modal.style.display = "flex";
-  document.getElementById("returnItemName").textContent = itemName;
-
-  const container = document.getElementById("returnQRcode").parentElement;
-  document.getElementById("returnQRcode").remove();
-  const newCanvas = document.createElement("canvas");
-  newCanvas.id = "returnQRcode";
-  container.appendChild(newCanvas);
-
-  setTimeout(() => {
-    try {
-      QRCode.toCanvas(newCanvas, qrData, { width: 260, margin: 8 });
-    } catch(e) {
-      showNotification("Error generating return QR", "error");
-    }
-  }, 60);
-}
-
-// ── Load Items ────────────────────────────────────
+ 
+// ── Load Items ────────────────────────────────────────────
 function loadItems() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getItems" }) })
   .then(r => r.json())
   .then(data => {
     const container = document.getElementById("itemsList");
     container.innerHTML = "";
-
+    itemNameMap = {};
+ 
     if (!data || data.length <= 1) {
       container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items available</div>";
       return;
     }
-
+ 
     for (let i = 1; i < data.length; i++) {
-      const row     = data[i];
-      const itemId  = row[0];
-      const name    = row[1];
-      const size    = row[2];
-      const stock   = parseInt(row[4]) || 0;
-      const avail   = stock > 0;
-
+      const row    = data[i];
+      const itemId = String(row[0]);
+      const name   = row[1] || "";
+      const size   = row[2] || "";
+      const stock  = parseInt(row[4]) || 0;
+      const avail  = stock > 0;
+ 
+      // "Stethoscope" or "Stethoscope (Large)"
+      const displayName = size ? `${name} (${size})` : name;
+      itemNameMap[itemId] = displayName;
+ 
       container.innerHTML += `
-        <label class="item-label" style="${!avail ? 'opacity:0.45; cursor:not-allowed;' : ''}">
-          <input type="checkbox" class="item-checkbox" value="${itemId}"
-            data-name="${name} ${size ? '('+size+')' : ''}"
-            onchange="selectItem(this)"
-            ${!avail ? 'disabled' : ''}>
-          <span>${name}${size ? ' — <em style="color:var(--text-muted);">' + size + '</em>' : ''}
-            <span style="margin-left:auto; font-size:12px; color:${avail ? 'var(--success)' : 'var(--danger)'}; font-weight:600;">
-              ${avail ? 'Stock: ' + stock : 'Out of stock'}
-            </span>
+        <label class="item-label" style="${!avail ? 'opacity:0.45;cursor:not-allowed;' : ''}">
+          <input type="checkbox" class="item-checkbox"
+            value="${itemId}" data-name="${displayName}"
+            onchange="selectItem(this)" ${!avail ? 'disabled' : ''}>
+          <span style="flex:1;">
+            ${name}${size ? ` <em style="color:var(--text-muted);font-size:13px;">— ${size}</em>` : ''}
+          </span>
+          <span style="font-size:12px;font-weight:600;color:${avail?'var(--success)':'var(--danger)'};">
+            ${avail ? 'Stock: ' + stock : 'Out of stock'}
           </span>
         </label>`;
     }
   })
-  .catch(() => showNotification("Failed to load items", "error"));
+  .catch(() => showNotification("Failed to load items","error"));
 }
-
+ 
 function selectItem(el) {
-  if (el.checked) {
-    selectedItems.push({ id: el.value, name: el.dataset.name });
-  } else {
-    selectedItems = selectedItems.filter(i => i.id !== el.value);
-  }
+  if (el.checked) selectedItems.push({ id: el.value, name: el.dataset.name });
+  else            selectedItems = selectedItems.filter(i => i.id !== el.value);
 }
-
+ 
 function filterItems() {
   const q = document.getElementById("searchItems").value.toLowerCase();
   document.querySelectorAll(".item-label").forEach(label => {
     label.style.display = label.textContent.toLowerCase().includes(q) ? "flex" : "none";
   });
 }
-
-// ── Generate QR ───────────────────────────────────
+ 
+// ── Generate QR ───────────────────────────────────────────
 function generateQR() {
-  if (selectedItems.length === 0) { showNotification("Please select at least one item", "error"); return; }
+  if (selectedItems.length === 0) { showNotification("Please select at least one item","error"); return; }
   const rd = document.getElementById("returnDate").value;
-  if (!rd) { showNotification("Please set a return date and time", "error"); return; }
-
-  const data = JSON.stringify({
+  if (!rd) { showNotification("Please set a return date and time","error"); return; }
+ 
+  const itemNamesList = selectedItems.map(i => i.name);
+ 
+  const borrowRecord = {
     student:     localStorage.getItem("userID"),
     studentName: localStorage.getItem("userName"),
     items:       selectedItems.map(i => i.id).join(","),
-    itemNames:   selectedItems.map(i => i.name).join(", "),
+    itemNames:   itemNamesList.join(", "),
+    itemList:    itemNamesList,
     returnDate:  rd,
     borrowDate:  new Date().toISOString()
+  };
+ 
+  // QR payload: what the scanner will read
+  const qrPayload = JSON.stringify({
+    student:     borrowRecord.student,
+    studentName: borrowRecord.studentName,
+    items:       borrowRecord.items,
+    itemNames:   borrowRecord.itemNames,
+    returnDate:  borrowRecord.returnDate,
+    borrowDate:  borrowRecord.borrowDate
   });
-
-  QRCode.toCanvas(document.getElementById("qrcode"), data, {
-    width: 280, margin: 10,
+ 
+  // Persist to localStorage
+  saveBorrowToStorage(borrowRecord);
+ 
+  // Draw QR on canvas
+  QRCode.toCanvas(document.getElementById("qrcode"), qrPayload, {
+    width: 260, margin: 10,
     color: { dark: '#0d4f4f', light: '#FFFFFF' }
   });
-
-  document.getElementById("qrContainer").style.display = "block";
+ 
+  // Populate item list below QR
+  document.getElementById("qrItemsList").innerHTML =
+    itemNamesList.map(n => `<li>${n}</li>`).join("");
+ 
+  document.getElementById("qrResultBox").style.display = "block";
+  document.getElementById("qrResultBox").scrollIntoView({ behavior:"smooth", block:"nearest" });
+ 
   showNotification("✓ QR Code generated! Show it to the instructor.", "success");
 }
-
+ 
 function saveQRCode() {
   const canvas = document.getElementById("qrcode");
-  const link   = document.createElement("a");
-  link.download = "borrow-qr.png";
-  link.href     = canvas.toDataURL();
-  link.click();
+  const a = document.createElement("a");
+  a.download = "borrow-qr.png";
+  a.href = canvas.toDataURL();
+  a.click();
 }
-
-// ── Borrowed Items ────────────────────────────────
+ 
+function resetBorrowForm() {
+  selectedItems = [];
+  document.getElementById("searchItems").value = "";
+  document.getElementById("returnDate").value  = "";
+  document.getElementById("qrResultBox").style.display = "none";
+  document.querySelectorAll(".item-checkbox").forEach(cb => cb.checked = false);
+}
+ 
+// ── localStorage helpers ──────────────────────────────────
+function storageKey() { return `borrows_${localStorage.getItem("userID")}`; }
+ 
+function saveBorrowToStorage(record) {
+  const existing = JSON.parse(localStorage.getItem(storageKey()) || "[]");
+  record.localId = Date.now();
+  existing.unshift(record);
+  localStorage.setItem(storageKey(), JSON.stringify(existing.slice(0, 30)));
+}
+ 
+function getLocalBorrows() {
+  return JSON.parse(localStorage.getItem(storageKey()) || "[]");
+}
+ 
+// ── My Borrows ────────────────────────────────────────────
 function loadBorrowedItems() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getBorrowedItems", student: localStorage.getItem("userID") }) })
   .then(r => r.json())
-  .then(data => {
-    const container = document.getElementById("borrowedItemsList");
-    container.innerHTML = "";
-
-    if (!data || data.length === 0 || data.error) {
-      container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
-      return;
-    }
-
-    let found = false;
-    data.forEach(record => {
+  .then(serverData => renderBorrowedItems(serverData))
+  .catch(() => renderBorrowedItems(null));
+}
+ 
+function renderBorrowedItems(serverData) {
+  const container = document.getElementById("borrowedItemsList");
+  container.innerHTML = "";
+ 
+  // Collect server-confirmed borrowed item IDs
+  const serverBorrowedIdSets = [];
+  if (serverData && Array.isArray(serverData) && !serverData.error) {
+    serverData.forEach(record => {
+      const status = record.length >= 7 ? record[6] : record[5];
+      if (status === "Borrowed") {
+        const rawItems = record.length >= 7 ? record[3] : record[2];
+        serverBorrowedIdSets.push(new Set(rawItems.split(",").map(s=>s.trim())));
+      }
+    });
+  }
+ 
+  const localBorrows = getLocalBorrows();
+  let hasAny = false;
+ 
+  localBorrows.forEach(record => {
+    const returnDate = new Date(record.returnDate);
+    const isOverdue  = returnDate < new Date();
+    const itemNames  = record.itemList && record.itemList.length
+      ? record.itemList
+      : (record.itemNames ? record.itemNames.split(", ") : ["Unknown item"]);
+ 
+    const qrPayload = JSON.stringify({
+      student:     record.student,
+      studentName: record.studentName,
+      items:       record.items,
+      itemNames:   record.itemNames,
+      returnDate:  record.returnDate,
+      action:      "return"
+    });
+ 
+    hasAny = true;
+    container.innerHTML += buildBorrowCard({ itemNames, returnDate, isOverdue, qrPayload });
+  });
+ 
+  // Show server records if nothing in local storage (different device)
+  if (!hasAny && serverBorrowedIdSets.length > 0) {
+    serverData.forEach(record => {
       const status     = record.length >= 7 ? record[6] : record[5];
-      const items      = record.length >= 7 ? record[3] : record[2];
+      const rawItems   = record.length >= 7 ? record[3] : record[2];
       const returnDateV = record.length >= 7 ? record[5] : record[4];
-
       if (status !== "Borrowed") return;
-      found = true;
-
+ 
+      const itemNames  = resolveItemNames(rawItems);
       const returnDate = new Date(returnDateV);
       const isOverdue  = returnDate < new Date();
-      const qrData     = JSON.stringify({
-        student: record[1],
-        studentName: record.length >= 7 ? record[2] : localStorage.getItem("userName"),
-        items,
-        returnDate: returnDateV,
-        action: "return"
+      const qrPayload  = JSON.stringify({
+        student:     localStorage.getItem("userID"),
+        studentName: localStorage.getItem("userName"),
+        items:       rawItems,
+        itemNames:   itemNames.join(", "),
+        returnDate:  returnDateV,
+        action:      "return"
       });
-
-      container.innerHTML += `
-        <div class="borrowed-item">
-          <div class="borrowed-item-header">${items}</div>
-          <div class="borrowed-item-info">
-            <p><strong>Return by:</strong> ${returnDate.toLocaleString()}</p>
-            ${isOverdue ? '<p style="color:var(--danger); font-weight:600;">⚠️ OVERDUE — Please return immediately!</p>' : ''}
-          </div>
-          <button onclick='showReturnQR("${items.replace(/'/g,"&#39;")}", ${JSON.stringify(qrData).replace(/"/g,'&quot;')})'
-            style="margin-top:12px; background:var(--success); width:auto; padding:10px 20px;">
-            📥 Show Return QR
-          </button>
-        </div>`;
+ 
+      hasAny = true;
+      container.innerHTML += buildBorrowCard({ itemNames, returnDate, isOverdue, qrPayload });
     });
-
-    if (!found) container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
-  })
-  .catch(() => showNotification("Failed to load borrowed items", "error"));
+  }
+ 
+  if (!hasAny)
+    container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
 }
-
-// ── History ───────────────────────────────────────
+ 
+function buildBorrowCard({ itemNames, returnDate, isOverdue, qrPayload }) {
+  const single    = itemNames.length === 1;
+  const titleText = single ? itemNames[0] : `${itemNames.length} Items Borrowed`;
+ 
+  const groupHTML = !single ? `
+    <div class="items-group">
+      <div class="items-group-label">Items in this borrow</div>
+      <ul>${itemNames.map(n=>`<li>${n}</li>`).join("")}</ul>
+    </div>` : "";
+ 
+  // Safely encode for onclick attribute
+  const namesJson   = JSON.stringify(itemNames);
+  const payloadJson = JSON.stringify(qrPayload);
+ 
+  return `
+    <div class="borrow-card ${isOverdue ? 'overdue' : ''}">
+      <div class="borrow-card-title">${isOverdue ? '⚠️ OVERDUE — ' : ''}${titleText}</div>
+      <div class="borrow-card-meta">
+        <strong>Return by:</strong> ${returnDate.toLocaleString()}
+        ${isOverdue ? '<br><span style="color:var(--danger);font-weight:600;">Please return immediately!</span>' : ''}
+      </div>
+      ${groupHTML}
+      <div class="borrow-actions">
+        <button
+          onclick="showReturnQR(${namesJson.replace(/"/g,'&quot;')}, ${payloadJson.replace(/"/g,'&quot;')})"
+          style="width:auto;padding:10px 20px;background:var(--primary);margin-top:0;font-size:13px;">
+          📥 Return Item${itemNames.length > 1 ? 's' : ''}
+        </button>
+      </div>
+    </div>`;
+}
+ 
+// ── Return QR Modal ───────────────────────────────────────
+function closeReturnModal() { document.getElementById("returnModal").style.display = "none"; }
+ 
+function showReturnQR(itemNamesRaw, qrDataRaw) {
+  // itemNamesRaw and qrDataRaw arrive as strings from onclick attribute
+  let itemNames, qrPayload;
+  try {
+    itemNames = typeof itemNamesRaw === 'string' ? JSON.parse(itemNamesRaw) : itemNamesRaw;
+    qrPayload = typeof qrDataRaw   === 'string' ? qrDataRaw : JSON.stringify(qrDataRaw);
+  } catch(e) {
+    itemNames = ["Unknown item"];
+    qrPayload = typeof qrDataRaw === 'string' ? qrDataRaw : "";
+  }
+ 
+  document.getElementById("returnModal").style.display = "flex";
+  document.getElementById("returnItemsList").innerHTML =
+    itemNames.map(n => `<li>${n}</li>`).join("");
+ 
+  // Recreate canvas to avoid stale render
+  const parent = document.getElementById("returnQRcode").parentElement;
+  document.getElementById("returnQRcode").remove();
+  const canvas = document.createElement("canvas");
+  canvas.id    = "returnQRcode";
+  canvas.style.cssText = "display:block;margin:0 auto;";
+  // Insert after returnModalItems div
+  const after = document.getElementById("returnModalItems").nextSibling;
+  parent.insertBefore(canvas, after);
+ 
+  setTimeout(() => {
+    try {
+      QRCode.toCanvas(canvas, qrPayload, { width: 260, margin: 8, color: { dark:'#0d4f4f', light:'#ffffff' } });
+    } catch(e) {
+      showNotification("Error generating QR","error");
+    }
+  }, 60);
+}
+ 
+function saveReturnQR() {
+  const canvas = document.getElementById("returnQRcode");
+  if (!canvas) return;
+  const a = document.createElement("a");
+  a.download = "return-qr.png";
+  a.href = canvas.toDataURL();
+  a.click();
+}
+ 
+// ── History ───────────────────────────────────────────────
 function loadBorrowHistory() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getBorrowHistory", student: localStorage.getItem("userID") }) })
   .then(r => r.json())
   .then(data => {
     const container = document.getElementById("historyList");
     container.innerHTML = "";
-
+ 
     if (!data || data.length === 0 || data.error) {
       container.innerHTML = "<div class='empty-state'><div class='icon'>📋</div>No history yet</div>";
       return;
     }
-
+ 
     data.forEach(record => {
       const status      = record.length >= 7 ? record[6] : record[5];
-      const items       = record.length >= 7 ? record[3] : record[2];
+      const rawItems    = record.length >= 7 ? record[3] : record[2];
       const borrowDateV = record.length >= 7 ? record[4] : record[3];
       const returnDateV = record.length >= 7 ? record[5] : record[4];
-
+ 
+      const itemNames  = resolveItemNames(rawItems);
+      const single     = itemNames.length === 1;
+      const titleText  = single ? itemNames[0] : `${itemNames.length} items`;
+ 
       const badge = status === "Returned"
         ? `<span class="status-badge status-returned">✓ Returned</span>`
         : `<span class="status-badge status-borrowed">Borrowed</span>`;
-
+ 
+      const groupHTML = !single ? `
+        <div class="items-group" style="margin:8px 0;">
+          <div class="items-group-label">Items</div>
+          <ul>${itemNames.map(n=>`<li>${n}</li>`).join("")}</ul>
+        </div>` : "";
+ 
       container.innerHTML += `
-        <div class="borrowed-item">
-          <div class="borrowed-item-header">${items}</div>
-          <div class="borrowed-item-info">
+        <div class="borrow-card">
+          <div class="borrow-card-title">${titleText}</div>
+          ${groupHTML}
+          <div class="borrow-card-meta">
             <p><strong>Borrowed:</strong> ${new Date(borrowDateV).toLocaleString()}</p>
             <p><strong>Return date:</strong> ${new Date(returnDateV).toLocaleString()}</p>
-            ${badge}
           </div>
+          ${badge}
         </div>`;
     });
   })
-  .catch(() => showNotification("Failed to load history", "error"));
+  .catch(() => showNotification("Failed to load history","error"));
 }
-
-// ── Overdue Check ─────────────────────────────────
+ 
+// ── Resolve item IDs to names ─────────────────────────────
+// rawItems: "1,2,3" (IDs) or "Stethoscope, BP Cuff" (already names)
+function resolveItemNames(rawItems) {
+  if (!rawItems) return ["Unknown item"];
+  const parts = rawItems.split(",").map(s => s.trim()).filter(Boolean);
+  return parts.map(part => {
+    if (/^\d+$/.test(part)) return itemNameMap[part] || `Item #${part}`;
+    return part;
+  });
+}
+ 
+// ── Overdue ───────────────────────────────────────────────
 function checkOverdueItems() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getOverdueItems", student: localStorage.getItem("userID") }) })
   .then(r => r.json())
   .then(data => {
     if (data && data.hasOverdue && data.overdueCount > 0) {
-      const list = data.items.map(i => `${i.itemName} (${i.daysOverdue} days)`).join(", ");
-      showNotification(`⚠️ ${data.overdueCount} overdue: ${list}`, "error");
+      const list = data.items.map(i => {
+        const name = resolveItemNames(String(i.itemName || i.itemId || ""))[0];
+        return `${name} (${i.daysOverdue}d)`;
+      }).join(", ");
+      showNotification(`⚠️ Overdue: ${list}`, "error");
     }
   })
   .catch(() => {});
 }
-
+ 
 checkAuth();
 loadItems();
 checkOverdueItems();
 setInterval(checkOverdueItems, 5 * 60 * 1000);
 </script>
-
+ 
 </body>
 </html>
