@@ -84,6 +84,7 @@
       font-size: 13px;
       font-weight: 700;
       flex-shrink: 0;
+      display: none !important; /* hidden — selection shown by card background only */
     }
     .tap-qty-box {
       align-items: center;
@@ -235,9 +236,18 @@
         <input id="searchItems" type="text" placeholder="Search by name..." oninput="filterItems()">
       </div>
       <div id="itemsList" class="items-list"></div>
-      <div class="form-group" style="margin-top:16px;">
-        <label>Expected Return Date &amp; Time</label>
-        <input type="datetime-local" id="returnDate" required>
+      <div class="form-group" style="margin-top:20px;">
+        <label style="font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:10px;">
+          📅 Expected Return Date &amp; Time
+        </label>
+        <div style="position:relative;">
+          <input type="datetime-local" id="returnDate" required
+            style="width:100%;padding:14px 16px 14px 44px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s,box-shadow 0.2s;box-sizing:border-box;appearance:none;-webkit-appearance:none;"
+            onfocus="this.style.borderColor='var(--primary)';this.style.boxShadow='0 0 0 3px rgba(13,79,79,0.12)'"
+            onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🗓️</span>
+        </div>
+        <div id="returnDateQuick" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>
       </div>
       <button onclick="generateQR()">🔖 Generate QR Code</button>
 
@@ -536,6 +546,14 @@ function resetBorrowForm() {
   document.querySelectorAll(".tap-qty-box").forEach(el=>el.style.display='none');
   document.querySelectorAll(".tap-check").forEach(el=>el.style.display='none');
   document.querySelectorAll(".qty-num").forEach(el=>el.textContent='1');
+  // Reset quick date buttons
+  const qd = document.getElementById("returnDateQuick");
+  if (qd) qd.querySelectorAll("button").forEach(b => {
+    b.classList.remove('qd-active');
+    b.style.background  = 'var(--surface)';
+    b.style.color       = 'var(--text-muted)';
+    b.style.borderColor = 'var(--border)';
+  });
 }
 
 // ── localStorage (per-user scoped) ───────────────────────
@@ -814,10 +832,19 @@ function loadBorrowHistory() {
 // ── Resolve item IDs → names ──────────────────────────────
 function resolveItemNames(rawItems) {
   if (!rawItems) return ["Unknown item"];
-  const parts = String(rawItems).split(",").map(s=>s.trim()).filter(Boolean);
+  const parts = String(rawItems).split(",").map(s => s.trim()).filter(Boolean);
   return parts.map(part => {
-    if (/^\d+$/.test(part)) return itemNameMap[part] || `Item #${part}`;
-    return part;
+    // Support both "id" and "id:qty" formats
+    const [idPart, qtyPart] = part.split(":");
+    const id  = idPart.trim();
+    const qty = parseInt(qtyPart) || 1;
+    let name;
+    if (/^\d+$/.test(id)) {
+      name = itemNameMap[id] || `Item #${id}`;
+    } else {
+      name = id; // already a name string
+    }
+    return qty > 1 ? `${name} ×${qty}` : name;
   });
 }
 
@@ -842,6 +869,51 @@ checkAuth();
 loadItems();
 checkOverdueItems();
 setInterval(checkOverdueItems, 5*60*1000);
+
+// ── Quick Return Date Buttons ─────────────────────────────
+function initQuickDates() {
+  const container = document.getElementById("returnDateQuick");
+  if (!container) return;
+
+  const options = [
+    { label: "3 hrs",  hours: 3  },
+    { label: "6 hrs",  hours: 6  },
+    { label: "1 day",  hours: 24 },
+    { label: "2 days", hours: 48 },
+    { label: "1 week", hours: 168 }
+  ];
+
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt.label;
+    btn.style.cssText = "padding:6px 14px;font-size:12px;font-weight:600;border:1.5px solid var(--border);border-radius:20px;background:var(--surface);color:var(--text-muted);cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;width:auto;margin:0;";
+    btn.onmouseover = () => { btn.style.borderColor='var(--primary)'; btn.style.color='var(--primary)'; };
+    btn.onmouseout  = () => {
+      if (!btn.classList.contains('qd-active')) { btn.style.borderColor='var(--border)'; btn.style.color='var(--text-muted)'; }
+    };
+    btn.onclick = () => {
+      const now = new Date();
+      now.setHours(now.getHours() + opt.hours);
+      // Format to datetime-local value: YYYY-MM-DDTHH:MM
+      const pad = n => String(n).padStart(2,'0');
+      const val = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      document.getElementById("returnDate").value = val;
+      // Highlight active button
+      container.querySelectorAll("button").forEach(b => {
+        b.classList.remove('qd-active');
+        b.style.background = 'var(--surface)';
+        b.style.color      = 'var(--text-muted)';
+        b.style.borderColor = 'var(--border)';
+      });
+      btn.classList.add('qd-active');
+      btn.style.background   = 'var(--primary)';
+      btn.style.color        = 'white';
+      btn.style.borderColor  = 'var(--primary)';
+    };
+    container.appendChild(btn);
+  });
+}
+initQuickDates();
 </script>
 
 </body>
