@@ -167,11 +167,45 @@
 <div class="dashboard-main">
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('inventory-tab', this)">📦 Inventory</button>
+    <button class="tab-btn" onclick="switchTab('shelf-tab', this)">🗄️ By Shelf</button>
+    <button class="tab-btn" onclick="switchTab('addstock-tab', this)">➕ Add Stock</button>
+    <button class="tab-btn" onclick="switchTab('alerts-tab', this)">🔔 Alerts <span class="badge" id="alertsCount" style="display:none;"></span></button>
     <button class="tab-btn" onclick="switchTab('borrowed-tab', this)">🔄 Borrows <span class="badge" id="borrowedCount" style="display:none;"></span></button>
     <button class="tab-btn" onclick="switchTab('scanner-tab', this)">📱 Scanner</button>
   </div>
 
-  <!-- TAB: Inventory -->
+  <!-- TAB: By Shelf -->
+  <div id="shelf-tab" class="tab-content">
+    <div class="card">
+      <h3>🗄️ Inventory by Shelf / Location</h3>
+      <p style="color:var(--text-muted);font-size:14px;margin-bottom:18px;">Items grouped by their storage location.</p>
+      <div id="shelfGrid"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Add Stock -->
+  <div id="addstock-tab" class="tab-content">
+    <div class="card">
+      <h3>➕ Add Stock to Existing Items</h3>
+      <p style="color:var(--text-muted);font-size:14px;margin-bottom:18px;">Enter the quantity to add to each item's current stock.</p>
+      <div class="form-group" style="margin-bottom:16px;">
+        <input id="addStockSearch" type="text" placeholder="🔍 Search items..."
+          oninput="filterAddStock()"
+          style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div id="addStockGrid"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Stock Alerts -->
+  <div id="alerts-tab" class="tab-content">
+    <div class="card">
+      <h3>🔔 Stock Alerts</h3>
+      <p style="color:var(--text-muted);font-size:14px;margin-bottom:18px;">Items that are out of stock or running low (≤ 5).</p>
+      <div id="alertsList"></div>
+    </div>
+  </div>
   <div id="inventory-tab" class="tab-content active">
     <div class="card">
       <h3>➕ Add New Item</h3>
@@ -275,7 +309,196 @@ function switchTab(tabName, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(tabName).classList.add('active');
   btn.classList.add('active');
-  if (tabName === 'borrowed-tab') loadBorrowedItemsTracking();
+  if (tabName === 'borrowed-tab')  loadBorrowedItemsTracking();
+  if (tabName === 'shelf-tab')     renderShelfView();
+  if (tabName === 'addstock-tab')  renderAddStock();
+  if (tabName === 'alerts-tab')    renderAlerts();
+}
+
+// ── Shelf View ────────────────────────────────────────────
+function renderShelfView() {
+  const grid = document.getElementById("shelfGrid");
+  if (!currentData || currentData.length <= 1) {
+    grid.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No inventory items yet</div>";
+    return;
+  }
+  // Group by location (col 6)
+  const shelves = {};
+  for (let i = 1; i < currentData.length; i++) {
+    const row      = currentData[i];
+    const location = (row[6] || "Unassigned").trim();
+    if (!shelves[location]) shelves[location] = [];
+    shelves[location].push(row);
+  }
+  const sorted = Object.keys(shelves).sort();
+  grid.innerHTML = "";
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;';
+
+  sorted.forEach(loc => {
+    const items = shelves[loc];
+    const itemCount = items.length;
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;';
+    card.innerHTML = `
+      <div style="background:var(--primary);color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:700;font-size:14px;">📍 ${loc}</span>
+        <span style="background:rgba(255,255,255,0.2);font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;">${itemCount} item${itemCount>1?'s':''}</span>
+      </div>
+      <div style="padding:12px 16px;">
+        ${items.map(row => {
+          const stock = parseInt(row[4]) || 0;
+          const type  = row[5] || "";
+          let stockColor = stock === 0 ? 'var(--danger)' : stock <= 5 ? 'var(--warning)' : 'var(--success)';
+          return `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-weight:600;font-size:14px;color:var(--primary);">${row[1]||'—'}${row[2]?' <em style="font-weight:400;font-size:12px;color:var(--text-muted);">— '+row[2]+'</em>':''}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${type}</div>
+              </div>
+              <div style="text-align:right;font-weight:700;font-size:14px;color:${stockColor};">${stock} <span style="font-size:11px;font-weight:400;color:var(--text-muted);">in stock</span></div>
+            </div>`;
+        }).join("")}
+      </div>`;
+    wrapper.appendChild(card);
+  });
+  grid.appendChild(wrapper);
+}
+
+// ── Add Stock ─────────────────────────────────────────────
+function renderAddStock() {
+  const grid = document.getElementById("addStockGrid");
+  if (!currentData || currentData.length <= 1) {
+    grid.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No inventory items yet</div>";
+    return;
+  }
+  grid.innerHTML = "";
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;';
+
+  for (let i = 1; i < currentData.length; i++) {
+    const row   = currentData[i];
+    const idx   = i;
+    const stock = parseInt(row[4]) || 0;
+    const name  = row[1] || "—";
+    const size  = row[2] ? ` — ${row[2]}` : "";
+    const loc   = row[6] || "—";
+
+    const card = document.createElement('div');
+    card.className = 'addstock-card';
+    card.dataset.search = (name + size + loc).toLowerCase();
+    card.style.cssText = 'background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;transition:box-shadow 0.2s;';
+    card.innerHTML = `
+      <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:4px;">${name}<em style="font-weight:400;font-size:13px;color:var(--text-muted);">${size}</em></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">📍 ${loc}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:14px;">Current: <span style="color:${stock<=5?'var(--danger)':'var(--success)'};">${stock}</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="number" min="1" placeholder="Qty" id="addqty_${idx}"
+          style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;"
+          onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter') addStockToItem(${idx}, this)">
+        <button onclick="addStockToItem(${idx}, document.getElementById('addqty_${idx}'))"
+          style="padding:9px 18px;background:var(--primary);color:white;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;width:auto;margin:0;">
+          Add
+        </button>
+      </div>`;
+    wrapper.appendChild(card);
+  }
+  grid.appendChild(wrapper);
+}
+
+function filterAddStock() {
+  const q = document.getElementById("addStockSearch").value.toLowerCase();
+  document.querySelectorAll(".addstock-card").forEach(c => {
+    c.style.display = c.dataset.search.includes(q) ? "" : "none";
+  });
+}
+
+function addStockToItem(rowIndex, inputEl) {
+  const qty = parseInt(inputEl.value);
+  if (!qty || qty < 1) { showNotification("Please enter a valid quantity","error"); return; }
+
+  const currentStock = parseInt(currentData[rowIndex][4]) || 0;
+  const newStock     = currentStock + qty;
+
+  fetch(API, { method:"POST", body: new URLSearchParams({ action:"updateItem", row:rowIndex, col:4, value:newStock }) })
+  .then(r=>r.json())
+  .then(data => {
+    if (data.status === "success") {
+      showNotification(`✓ Added ${qty} to stock. New total: ${newStock}`,"success");
+      inputEl.value = "";
+      loadItems(); // Refresh inventory data
+      setTimeout(() => renderAddStock(), 600);
+    } else {
+      showNotification("Failed to update stock","error");
+    }
+  })
+  .catch(() => showNotification("Error updating stock","error"));
+}
+
+// ── Stock Alerts ──────────────────────────────────────────
+function renderAlerts() {
+  const container = document.getElementById("alertsList");
+  if (!currentData || currentData.length <= 1) {
+    container.innerHTML = "<div class='empty-state'><div class='icon'>✅</div>No inventory data</div>";
+    return;
+  }
+
+  const outOfStock = [];
+  const lowStock   = [];
+  for (let i = 1; i < currentData.length; i++) {
+    const row   = currentData[i];
+    const stock = parseInt(row[4]) || 0;
+    if (stock === 0)       outOfStock.push({ row, idx: i });
+    else if (stock <= 5)   lowStock.push({ row, idx: i });
+  }
+
+  // Update badge
+  const total = outOfStock.length + lowStock.length;
+  const badge = document.getElementById("alertsCount");
+  if (total > 0) { badge.textContent = total; badge.style.display = "inline-block"; }
+  else badge.style.display = "none";
+
+  if (outOfStock.length === 0 && lowStock.length === 0) {
+    container.innerHTML = "<div class='empty-state'><div class='icon'>✅</div>All items have sufficient stock</div>";
+    return;
+  }
+
+  let html = "";
+
+  if (outOfStock.length > 0) {
+    html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--danger);margin-bottom:12px;">🚫 Out of Stock (${outOfStock.length})</div>`;
+    outOfStock.forEach(({ row }) => {
+      html += alertCard(row, "out");
+    });
+    if (lowStock.length > 0) html += `<hr style="border:none;border-top:1px solid var(--border);margin:18px 0;">`;
+  }
+
+  if (lowStock.length > 0) {
+    html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--warning);margin-bottom:12px;">⚠️ Low Stock (${lowStock.length})</div>`;
+    lowStock.forEach(({ row }) => {
+      html += alertCard(row, "low");
+    });
+  }
+
+  container.innerHTML = html;
+}
+
+function alertCard(row, type) {
+  const stock    = parseInt(row[4]) || 0;
+  const isOut    = type === "out";
+  const bg       = isOut ? '#fff5f5' : '#fffbea';
+  const border   = isOut ? 'var(--danger)' : 'var(--warning)';
+  const label    = isOut ? '🚫 Out of Stock' : `⚠️ Low — only ${stock} left`;
+  const labelClr = isOut ? 'var(--danger)' : '#8a6400';
+  return `
+    <div style="background:${bg};border:1px solid ${border};border-left:4px solid ${border};border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+      <div>
+        <div style="font-weight:700;font-size:14px;color:var(--primary);">${row[1]||'—'}${row[2]?' <em style="font-weight:400;font-size:13px;color:var(--text-muted);">— '+row[2]+'</em>':''}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">📍 ${row[6]||'—'} &nbsp;|&nbsp; ${row[5]||'—'}</div>
+      </div>
+      <span style="font-size:12px;font-weight:700;color:${labelClr};white-space:nowrap;">${label}</span>
+    </div>`;
 }
 
 // ── Profile ───────────────────────────────────────────────
@@ -735,6 +958,8 @@ function closeDetailModal() { document.getElementById("borrowerDetailModal").sty
 
 checkAuth();
 loadItems();
+// After a short delay let inventory data populate, then update alert badge
+setTimeout(renderAlerts, 1200);
 </script>
 
 </body>
