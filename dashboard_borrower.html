@@ -173,6 +173,7 @@
     </div>
     <div class="modal-body">
       <div class="form-group"><label>Full Name</label><input type="text" id="profileName" readonly style="background:#f4f7f6;color:#777;"></div>
+      <div class="form-group"><label>School ID Number</label><input type="text" id="profileIdNumber" placeholder="e.g., 2024-00123"></div>
       <div class="form-group"><label>Email</label><input type="email" id="profileEmail" readonly style="background:#f4f7f6;color:#777;"></div>
       <div class="form-group"><label>Contact Number</label><input type="tel" id="profileContact"></div>
       <div class="form-group"><label>Department / Course</label><input type="text" id="profileDepartment"></div>
@@ -279,7 +280,7 @@
           </div>
           <div class="form-group">
             <label>Procedure <span style="color:var(--danger);">*</span></label>
-            <select id="borrowProcedure">
+            <select id="borrowProcedure" onchange="onProcedureChange()">
               <option value="">— Select Procedure —</option>
             </select>
           </div>
@@ -299,8 +300,26 @@
         </div>
       </div>
 
-      <!-- Items Section -->
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);margin-bottom:10px;">📦 Select Items to Borrow</div>
+      <!-- Procedure Kit Banner (shown when procedure auto-maps items) -->
+      <div id="procedureKitBanner" style="display:none;background:linear-gradient(135deg,#e8f6f0,#f0faf6);border:1.5px solid var(--success);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-size:20px;">🧰</span>
+          <span style="font-weight:700;color:var(--success);font-size:14px;">Procedure Kit Auto-Selected</span>
+          <button onclick="clearProcedureKit()" style="margin-left:auto;width:auto;padding:4px 12px;font-size:12px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:6px;">Clear Kit</button>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);">The recommended items for <strong id="kitProcedureName" style="color:var(--primary);"></strong> have been pre-selected below. You may add or remove items as needed.</div>
+      </div>
+
+      <!-- Shelf / Location Filter -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);">📦 Select Items to Borrow</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--text-muted);font-weight:600;">📚 Shelf:</span>
+          <select id="shelfFilter" onchange="filterItems()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;cursor:pointer;">
+            <option value="">All Shelves</option>
+          </select>
+        </div>
+      </div>
       <div class="form-group">
         <input id="searchItems" type="text" placeholder="🔍 Search by name..." oninput="filterItems()"
           style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s;"
@@ -370,9 +389,10 @@
 
 <script src="app.js"></script>
 <script>
-let selectedItems = [];
-let itemNameMap   = {};   // itemId → display name
-let itemTypeMap   = {};   // itemId → "Consumable" | "Non-Consumable"
+let selectedItems   = [];
+let itemNameMap     = {};   // itemId → display name
+let itemTypeMap     = {};   // itemId → "Consumable" | "Non-Consumable"
+let itemLocationMap = {};   // itemId → shelf/location string
 
 // ── Auth ─────────────────────────────────────────────────
 // IMPORTANT: All localStorage keys are scoped per userID
@@ -427,6 +447,8 @@ function openProfile() {
       document.getElementById("profileContact").value    = data.contact    || "";
       document.getElementById("profileDepartment").value = data.department || "";
       document.getElementById("profileYear").value       = data.year       || "";
+      if (document.getElementById("profileIdNumber"))
+        document.getElementById("profileIdNumber").value = data.idNumber   || "";
     } else {
       showNotification("Could not load profile", "error");
     }
@@ -441,10 +463,16 @@ function saveProfile() {
     action:"updateUserProfile", userID:getUserID(),
     contact:    document.getElementById("profileContact").value,
     department: document.getElementById("profileDepartment").value,
-    year:       document.getElementById("profileYear").value
+    year:       document.getElementById("profileYear").value,
+    idNumber:   document.getElementById("profileIdNumber") ? document.getElementById("profileIdNumber").value : ""
   })})
   .then(r=>r.json()).then(data => {
-    if (data.status==="success") { showNotification("✓ Profile updated!","success"); closeProfile(); }
+    if (data.status==="success") {
+      // Update cached idNumber too
+      const newId = document.getElementById("profileIdNumber") ? document.getElementById("profileIdNumber").value : "";
+      if (newId) { localStorage.setItem("userIDNumber", newId); localStorage.setItem("borrowerIdNumber", newId); }
+      showNotification("✓ Profile updated!","success"); closeProfile();
+    }
     else showNotification("Failed to update profile","error");
   })
   .catch(()=>showNotification("Error saving profile","error"));
@@ -482,14 +510,18 @@ function loadItems() {
   .then(data => {
     const container = document.getElementById("itemsList");
     container.innerHTML = "";
-    itemNameMap   = {};
-    itemTypeMap   = {};
-    selectedItems = [];
+    itemNameMap     = {};
+    itemTypeMap     = {};
+    itemLocationMap = {};
+    selectedItems   = [];
 
     if (!data || data.length <= 1) {
       container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items available</div>";
       return;
     }
+
+    // Populate shelf/location filter dropdown
+    populateShelfFilter(data);
 
     for (let i = 1; i < data.length; i++) {
       const row    = data[i];
@@ -498,15 +530,21 @@ function loadItems() {
       const size   = row[2] || "";
       const stock  = parseInt(row[4]) || 0;
       const type   = row[5] || "";
+      const loc    = row[6] || "";
       const avail  = stock > 0;
 
       const displayName = size ? `${name} (${size})` : name;
-      itemNameMap[itemId] = displayName;
-      itemTypeMap[itemId] = type;
+      itemNameMap[itemId]     = displayName;
+      itemTypeMap[itemId]     = type;
+      itemLocationMap[itemId] = loc;
 
       const typePill = type === "Consumable"
         ? `<span style="font-size:11px;background:#e8f0ff;color:#2d4fa0;padding:2px 8px;border-radius:10px;font-weight:600;">Consumable</span>`
         : `<span style="font-size:11px;background:#f0faf6;color:#1a5a3e;padding:2px 8px;border-radius:10px;font-weight:600;">Non-Consumable</span>`;
+
+      const locPill = loc
+        ? `<span style="font-size:11px;background:#f5f0e8;color:#7a5c1e;padding:2px 8px;border-radius:10px;font-weight:600;">📚 ${loc}</span>`
+        : '';
 
       container.innerHTML += `
         <div class="tap-item ${!avail?'tap-item-disabled':''}" id="ti_${itemId}"
@@ -515,6 +553,7 @@ function loadItems() {
             <div style="font-weight:600;font-size:14px;color:var(--primary);">${name}${size?` <em style="color:var(--text-muted);font-weight:400;font-size:13px;">— ${size}</em>`:''}</div>
             <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
               ${typePill}
+              ${locPill}
               <span style="font-size:12px;font-weight:600;color:${avail?'var(--success)':'var(--danger)'};">
                 ${avail?`Stock: ${stock}`:'Out of stock'}
               </span>
@@ -558,24 +597,58 @@ function changeQty(itemId, delta, maxStock) {
 }
 
 function filterItems() {
-  const q = document.getElementById("searchItems").value.toLowerCase();
+  const q     = document.getElementById("searchItems").value.toLowerCase();
+  const shelf = (document.getElementById("shelfFilter") ? document.getElementById("shelfFilter").value : "").toLowerCase();
   document.querySelectorAll(".tap-item").forEach(el => {
-    el.style.display = el.textContent.toLowerCase().includes(q) ? "flex" : "none";
+    const textMatch  = el.textContent.toLowerCase().includes(q);
+    const itemId     = el.id.replace("ti_", "");
+    const itemLoc    = (itemLocationMap[itemId] || "").toLowerCase();
+    const shelfMatch = !shelf || itemLoc === shelf;
+    el.style.display = (textMatch && shelfMatch) ? "flex" : "none";
   });
 }
 
 // ── Procedures Map ────────────────────────────────────────
 const PROCEDURES = {
-  "Fundamentals of Nursing":  ["Bed Making","Vital Signs Taking","Hand Washing","Sponge Bath","Wound Dressing","Catheter Care","IV Insertion","NG Tube Insertion","O2 Administration","Health Assessment"],
+  "Fundamentals of Nursing":  ["Hand Washing","Wound Care","Bed Making","Vital Signs Taking","Sponge Bath","Catheter Care","IV Insertion","NG Tube Insertion","O2 Administration","Health Assessment"],
   "Community Health":         ["Home Visit","Community Diagnosis","Immunization","Family Planning Counseling","Environmental Sanitation"],
-  "Maternal & Child":         ["Newborn Care","Prenatal Assessment","Post-partum Care","Leopold's Maneuver","Birthing Assistance"],
-  "Medical-Surgical":         ["Surgical Asepsis","Post-op Care","Colostomy Care","Tracheostomy Care","Blood Transfusion","Peritoneal Dialysis"],
+  "Maternal & Child":         ["Newborn Care","Prenatal Assessment","Post-partum Care","Leopold's Maneuver","Intrapartum Care","Internal Examination","Female Catheterization","Perianal Flushing","Birthing Assistance"],
+  "Medical-Surgical":         ["Wound Care","Surgical Asepsis","Post-op Care","Colostomy Care","Tracheostomy Care","Blood Transfusion","Peritoneal Dialysis"],
   "Pediatric Nursing":        ["Pediatric Assessment","Fever Management","Oral Rehydration","Immunization (Peds)","Growth Monitoring"],
   "Psychiatric Nursing":      ["Mental Status Exam","Crisis Intervention","Therapeutic Communication","Medication Administration (Psych)"],
   "Gerontological Nursing":   ["Geriatric Assessment","Fall Prevention","Dementia Care","Palliative Care"],
   "Critical Care Nursing":    ["Hemodynamic Monitoring","Mechanical Ventilation","Arterial Blood Gas","CPR","Defibrillation"],
   "Operating Room Nursing":   ["Surgical Scrubbing","Instrument Count","Surgical Positioning","Sterile Field Setup"],
-  "Other":                    ["Other Procedure"]
+  "Other":                    ["Hand Washing","Wound Care","Internal Examination","Female Catheterization","Leopold's Maneuver","Perianal Flushing","Newborn Care","Intrapartum Care","Other Procedure"]
+};
+
+// ── Procedure → Suggested Item Name Keywords ──────────────
+// Maps procedure names to keyword arrays that match inventory item names (case-insensitive partial match)
+const PROCEDURE_ITEMS = {
+  "Hand Washing": [
+    "soap","alcohol","hand sanitizer","basin","towel","gloves","apron","wash","handwash","sink"
+  ],
+  "Wound Care": [
+    "gauze","bandage","dressing","iodine","povidone","antiseptic","forceps","scissors","tape","wound","saline","cotton","syringe","gloves","basin","sterile"
+  ],
+  "Internal Examination": [
+    "gloves","sterile gloves","lubricant","jelly","speculum","drape","basin","pad","underpad","disposable"
+  ],
+  "Female Catheterization": [
+    "catheter","foley","urine bag","drainage bag","lubricant","jelly","sterile gloves","antiseptic","cotton","syringe","saline","basin","tape","drape"
+  ],
+  "Leopold's Maneuver": [
+    "stethoscope","doppler","fetoscope","measuring tape","tape measure","lubricant","jelly","gloves","drape","pillow"
+  ],
+  "Perianal Flushing": [
+    "basin","water","soap","cotton","gauze","gloves","towel","pad","underpad","forceps","antiseptic"
+  ],
+  "Newborn Care": [
+    "bulb syringe","suction","cord clamp","vitamin k","erythromycin","eye ointment","scale","blanket","towel","gloves","basin","thermometer","stethoscope","tape","measuring tape","band"
+  ],
+  "Intrapartum Care": [
+    "gloves","sterile gloves","scissor","clamp","cord clamp","basin","drape","suture","needle","syringe","oxytocin","iv","catheter","stethoscope","doppler","pad","underpad","gauze","cotton","antiseptic"
+  ]
 };
 
 function updateProcedures() {
@@ -587,6 +660,73 @@ function updateProcedures() {
       procSel.innerHTML += `<option value="${p}">${p}</option>`;
     });
   }
+  // Reset procedure kit if subject changes
+  clearProcedureKit();
+}
+
+function onProcedureChange() {
+  const proc = document.getElementById("borrowProcedure").value;
+  if (proc && PROCEDURE_ITEMS[proc]) {
+    autoSelectProcedureItems(proc);
+  } else {
+    // No auto-mapping for this procedure — hide banner, keep current selection
+    document.getElementById("procedureKitBanner").style.display = "none";
+  }
+}
+
+function autoSelectProcedureItems(proc) {
+  const keywords = PROCEDURE_ITEMS[proc] || [];
+  if (keywords.length === 0) return;
+
+  // Deselect all currently selected items first
+  clearProcedureKit(false);
+
+  // Match items by name keywords
+  let matched = 0;
+  document.querySelectorAll(".tap-item:not(.tap-item-disabled)").forEach(el => {
+    const itemId   = el.id.replace("ti_", "");
+    const itemName = (itemNameMap[itemId] || "").toLowerCase();
+    const isMatch  = keywords.some(kw => itemName.includes(kw.toLowerCase()));
+    if (isMatch && !selectedItems.find(i => i.id === itemId)) {
+      tapItem(itemId);
+      matched++;
+    }
+  });
+
+  // Show/hide banner
+  const banner = document.getElementById("procedureKitBanner");
+  if (matched > 0) {
+    banner.style.display = "block";
+    document.getElementById("kitProcedureName").textContent = proc;
+    showNotification(`✓ ${matched} item(s) auto-selected for ${proc}`, "success");
+  } else {
+    banner.style.display = "none";
+    showNotification(`No matching items found for ${proc} — please select manually`, "info");
+  }
+}
+
+function clearProcedureKit(showMsg = true) {
+  // Deselect all items
+  [...selectedItems].forEach(item => tapItem(item.id));
+  selectedItems = [];
+  document.getElementById("procedureKitBanner").style.display = "none";
+  if (showMsg) showNotification("Kit cleared — select items manually", "info");
+}
+
+// ── Shelf / Location Filter Population ───────────────────
+function populateShelfFilter(data) {
+  const sel = document.getElementById("shelfFilter");
+  if (!sel) return;
+  const locations = new Set();
+  for (let i = 1; i < data.length; i++) {
+    const loc = (data[i][6] || "").trim();
+    if (loc) locations.add(loc);
+  }
+  // Keep current "All Shelves" option then add sorted unique locations
+  sel.innerHTML = '<option value="">All Shelves</option>';
+  [...locations].sort().forEach(loc => {
+    sel.innerHTML += `<option value="${loc}">${loc}</option>`;
+  });
 }
 
 // ── Init borrow form fields ───────────────────────────────
@@ -598,11 +738,11 @@ function initBorrowForm() {
     const now = new Date();
     dateEl.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   }
-  // Pre-fill from profile if stored
-  const storedCourse = localStorage.getItem("borrowerCourse") || "";
-  const storedId     = localStorage.getItem("borrowerIdNumber") || "";
-  if (storedCourse) document.getElementById("borrowerCourse").value = storedCourse;
-  if (storedId)     document.getElementById("borrowerIdNumber").value = storedId;
+  // Pre-fill from localStorage
+  const storedCourse = localStorage.getItem("borrowerCourse")   || "";
+  const storedId     = localStorage.getItem("borrowerIdNumber") || localStorage.getItem("userIDNumber") || "";
+  if (storedCourse) document.getElementById("borrowerCourse").value    = storedCourse;
+  if (storedId)     document.getElementById("borrowerIdNumber").value  = storedId;
 }
 
 // ── Generate QR ───────────────────────────────────────────

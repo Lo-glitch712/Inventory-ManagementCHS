@@ -901,6 +901,39 @@ function openDetailModal(borrower) {
   const returned = borrower.records.filter(r => r[6] === "Returned");
   let html = "";
 
+  // ── Borrower summary header ──────────────────────────────
+  // Try to extract idNumber/course/procedure from latest record's QR metadata
+  // These are stored in borrow records if the new QR format was used
+  const latestRecord = [...borrower.records].reverse()[0];
+  let idNum = "", course = "", procedure = "", subject = "";
+  try {
+    // Attempt to parse stored QR payload if present (col index varies)
+    // Fields may be embedded directly in newer records
+    // We surface what we can find
+    const rec = latestRecord;
+    if (rec && rec.length > 10) {
+      idNum     = rec[10] || "";
+      course    = rec[11] || "";
+      subject   = rec[12] || "";
+      procedure = rec[13] || "";
+    }
+  } catch(e) {}
+
+  const infoRows = [
+    idNum     ? `<div>🪪 <strong>ID Number:</strong> ${idNum}</div>`         : '',
+    course    ? `<div>📚 <strong>Course/Section:</strong> ${course}</div>`   : '',
+    subject   ? `<div>📖 <strong>Subject:</strong> ${subject}</div>`         : '',
+    procedure ? `<div>🔬 <strong>Procedure:</strong> ${procedure}</div>`     : '',
+  ].filter(Boolean).join("");
+
+  if (infoRows) {
+    html += `
+      <div style="background:var(--surface-alt);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:var(--text-muted);line-height:2.1;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);margin-bottom:8px;">🗂️ Borrower Info</div>
+        ${infoRows}
+      </div>`;
+  }
+
   // ── Active / Overdue borrows ──────────────────────────
   if (active.length > 0) {
     html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">📤 Currently Borrowed</div>`;
@@ -910,6 +943,10 @@ function openDetailModal(borrower) {
       const daysOver   = isOverdue ? Math.floor((new Date() - returnDate) / 86400000) : 0;
       const itemNames  = resolveAdminItemNames(r[3]);
 
+      // Try to get per-record metadata
+      let rProc = "", rCourse = "", rId = "";
+      if (r.length > 10) { rId = r[10]||""; rCourse = r[11]||""; rProc = r[13]||""; }
+
       html += `
         <div style="background:${isOverdue?'#fff5f5':'#f0faf6'};border:1px solid ${isOverdue?'#f5c6c6':'#b8e8d4'};border-left:4px solid ${isOverdue?'var(--danger)':'var(--success)'};border-radius:10px;padding:14px 16px;margin-bottom:10px;">
           <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600;">📋 Borrowed Items</div>
@@ -917,6 +954,9 @@ function openDetailModal(borrower) {
             ${itemNames.map(n=>`<li style="font-size:14px;font-weight:600;color:var(--primary);padding:3px 0;border-bottom:1px solid rgba(0,0,0,0.06);">📦 ${n}</li>`).join("")}
           </ul>
           <div style="font-size:12px;color:var(--text-muted);line-height:2.1;">
+            ${rId     ? `<div>🪪 <strong>ID:</strong> ${rId}</div>` : ''}
+            ${rCourse ? `<div>📚 <strong>Course:</strong> ${rCourse}</div>` : ''}
+            ${rProc   ? `<div>🔬 <strong>Procedure:</strong> ${rProc}</div>` : ''}
             <div>📅 <strong>Borrowed:</strong> ${new Date(r[4]).toLocaleString()}</div>
             <div>⏰ <strong>Return by:</strong> <span style="color:${isOverdue?'var(--danger)':'inherit'};font-weight:${isOverdue?'700':'400'};">${returnDate.toLocaleString()}</span></div>
             ${isOverdue?`<div style="color:var(--danger);font-weight:700;">⚠️ ${daysOver} day${daysOver>1?'s':''} overdue!</div>`:''}
@@ -933,6 +973,8 @@ function openDetailModal(borrower) {
     html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">✅ Returned Items</div>`;
     returned.forEach(r => {
       const itemNames = resolveAdminItemNames(r[3]);
+      let rProc = "", rCourse = "", rId = "";
+      if (r.length > 10) { rId = r[10]||""; rCourse = r[11]||""; rProc = r[13]||""; }
       html += `
         <div style="background:#f4f7f6;border:1px solid var(--border);border-left:4px solid var(--success);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
           <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600;">📋 Items Returned</div>
@@ -940,6 +982,9 @@ function openDetailModal(borrower) {
             ${itemNames.map(n=>`<li style="font-size:14px;font-weight:600;color:var(--primary);padding:3px 0;border-bottom:1px solid rgba(0,0,0,0.06);">📦 ${n}</li>`).join("")}
           </ul>
           <div style="font-size:12px;color:var(--text-muted);line-height:2.1;">
+            ${rId     ? `<div>🪪 <strong>ID:</strong> ${rId}</div>` : ''}
+            ${rCourse ? `<div>📚 <strong>Course:</strong> ${rCourse}</div>` : ''}
+            ${rProc   ? `<div>🔬 <strong>Procedure:</strong> ${rProc}</div>` : ''}
             <div>📅 <strong>Borrowed:</strong> ${new Date(r[4]).toLocaleString()}</div>
             <div>📅 <strong>Due date:</strong> ${new Date(r[5]).toLocaleString()}</div>
             ${r[8]?`<div>👤 <strong>Lent by:</strong> ${r[8]}</div>`:''}

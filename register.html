@@ -18,12 +18,20 @@
     <p class="subtitle">Student borrower registration</p>
 
     <div class="hint-box">
-      📧 Use your school email: <strong>yourname@gbox.ncf.edu.ph</strong>
+      📧 Use your school email: <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="522b3d27203c333f371235303d2a7c3c31347c3736277c223a">[email&#160;protected]</a></strong>
     </div>
 
     <div class="form-group">
       <label for="name">Full Name</label>
       <input id="name" type="text" placeholder="e.g., Juan dela Cruz" autocomplete="name" required>
+    </div>
+
+    <div class="form-group">
+      <label for="idNumber">School ID Number</label>
+      <input id="idNumber" type="text" placeholder="e.g., 2024-00123" required>
+      <small style="color:var(--text-muted);font-size:12px;margin-top:4px;display:block;">
+        Your school-issued student ID number
+      </small>
     </div>
 
     <div class="form-group">
@@ -62,10 +70,4 @@
     <button onclick="register()" style="margin-top: 14px;">Create Account</button>
 
     <div class="auth-link">
-      Already have an account? <a href="login.html">Sign in</a>
-    </div>
-  </div>
-
-<script src="app.js"></script>
-</body>
-</html>
+     

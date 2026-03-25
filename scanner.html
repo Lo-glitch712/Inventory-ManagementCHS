@@ -131,7 +131,11 @@ function processBorrow(data) {
       items:       data.items,
       returnDate:  data.returnDate,
       lentBy:      localStorage.getItem("userID")   || "",
-      lentByName:  localStorage.getItem("userName") || ""
+      lentByName:  localStorage.getItem("userName") || "",
+      idNumber:    data.idNumber   || "",
+      course:      data.course     || "",
+      subject:     data.subject    || "",
+      procedure:   data.procedure  || ""
     })
   })
   .then(r => r.json())

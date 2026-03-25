@@ -32,6 +32,7 @@ function register() {
   const button = event.target;
 
   const name            = document.getElementById('name').value.trim();
+  const idNumber        = document.getElementById('idNumber') ? document.getElementById('idNumber').value.trim() : '';
   const department      = document.getElementById('department').value.trim();
   const year            = document.getElementById('year').value.trim();
   const contact         = document.getElementById('contact').value.trim();
@@ -42,6 +43,7 @@ function register() {
   const role = 'Borrower';
 
   if (!name)       { showNotification('Please enter your full name', 'error'); return; }
+  if (!idNumber)   { showNotification('Please enter your school ID number', 'error'); return; }
   if (!department) { showNotification('Please enter your department/course', 'error'); return; }
   if (!year)       { showNotification('Please enter your year level', 'error'); return; }
   if (!contact)    { showNotification('Please enter your contact number', 'error'); return; }
@@ -63,7 +65,7 @@ function register() {
 
   fetch(API, {
     method: 'POST',
-    body: new URLSearchParams({ action: 'register', role, name, department, year, contact, email, password })
+    body: new URLSearchParams({ action: 'register', role, name, idNumber, department, year, contact, email, password })
   })
   .then(res => res.json())
   .then(data => {
@@ -105,6 +107,7 @@ function login() {
       localStorage.setItem('userName',  data.name);
       localStorage.setItem('userRole',  data.role);
       localStorage.setItem('userEmail', email);
+      if (data.idNumber) localStorage.setItem('userIDNumber', data.idNumber);
       showNotification('Login successful! Redirecting...', 'success');
       if (data.role === 'Borrower') {
         setTimeout(() => window.location = 'dashboard_borrower.html', 800);
