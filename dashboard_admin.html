@@ -589,10 +589,10 @@ function renderBorrowerGrid() {
   else badge.style.display='none';
 
   const entries = Object.values(borrowerMap).filter(b => {
-    if (currentFilter==='borrowed') return b.activeCount>0;
-    if (currentFilter==='returned') return b.returnedCount>0 && b.activeCount===0 && b.overdueCount===0;
-    if (currentFilter==='overdue')  return b.overdueCount>0;
-    return true;
+    if (currentFilter==='borrowed') return b.activeCount > 0 || b.overdueCount > 0;
+    if (currentFilter==='returned') return b.returnedCount > 0 && b.activeCount === 0 && b.overdueCount === 0;
+    if (currentFilter==='overdue')  return b.overdueCount > 0;
+    return true; // 'all'
   });
 
   if (entries.length === 0) {
@@ -624,12 +624,20 @@ function renderBorrowerGrid() {
       pill=`<span style="background:#e8f4ff;color:#1a5fa0;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">✓ All Returned</span>`;
     }
 
+    // Build a preview of items from the most recent record
+    const previewRecord = b.records.find(r => r[6]==="Borrowed") || b.records[b.records.length-1];
+    const previewNames  = previewRecord ? resolveAdminItemNames(previewRecord[3]) : [];
+    const previewText   = previewNames.length > 0
+      ? (previewNames.length <= 2 ? previewNames.join(", ") : `${previewNames[0]} +${previewNames.length-1} more`)
+      : "";
+
     const card = document.createElement('div');
     card.style.cssText = `background:${bgColor};border:1.5px solid ${borderColor};border-radius:12px;padding:16px 18px;cursor:pointer;transition:all 0.2s ease;`;
     card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;"><div style="font-size:32px;line-height:1;">👤</div>${pill}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;"><div style="font-size:28px;line-height:1;">👤</div>${pill}</div>
       <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:4px;">${b.studentName}</div>
       <div style="font-size:12px;color:${statusColor};font-weight:600;">${statusLabel}</div>
+      ${previewText ? `<div style="font-size:12px;color:var(--text-muted);margin-top:5px;font-style:italic;">📦 ${previewText}</div>` : ''}
       <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${totalItems} total record${totalItems>1?'s':''}</div>
       <div style="margin-top:12px;font-size:12px;color:var(--primary-light);font-weight:600;">Tap to view details →</div>`;
     card.onmouseover = () => { card.style.transform='translateY(-3px)'; card.style.boxShadow='0 8px 24px rgba(13,79,79,0.12)'; };
@@ -641,43 +649,77 @@ function renderBorrowerGrid() {
   grid.appendChild(wrapper);
 }
 
+// ── Resolve item IDs to names from inventory ─────────────
+function resolveAdminItemNames(rawItems) {
+  if (!rawItems) return ["Unknown item"];
+  return String(rawItems).split(",").map(entry => {
+    const id  = entry.split(":")[0].trim();
+    const qty = parseInt(entry.split(":")[1]) || 1;
+    // Look up in currentData (inventory)
+    let name = null;
+    for (let i = 1; i < currentData.length; i++) {
+      if (String(currentData[i][0]) === id) {
+        const n = currentData[i][1] || "";
+        const s = currentData[i][2] || "";
+        name = s ? `${n} (${s})` : n;
+        break;
+      }
+    }
+    if (!name) name = "Item #" + id;
+    return qty > 1 ? `${name} ×${qty}` : name;
+  });
+}
+
 function openDetailModal(borrower) {
   document.getElementById("detailModalTitle").textContent = `👤 ${borrower.studentName}`;
   const body = document.getElementById("detailModalBody");
 
-  const active   = borrower.records.filter(r=>r[6]==="Borrowed");
-  const returned = borrower.records.filter(r=>r[6]==="Returned");
+  const active   = borrower.records.filter(r => r[6] === "Borrowed");
+  const returned = borrower.records.filter(r => r[6] === "Returned");
   let html = "";
 
+  // ── Active / Overdue borrows ──────────────────────────
   if (active.length > 0) {
-    html += `<h4 style="color:var(--primary);font-size:14px;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">📤 Currently Borrowed</h4>`;
+    html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">📤 Currently Borrowed</div>`;
     active.forEach(r => {
       const returnDate = new Date(r[5]);
       const isOverdue  = returnDate < new Date();
-      const daysOver   = isOverdue ? Math.floor((new Date()-returnDate)/86400000) : 0;
+      const daysOver   = isOverdue ? Math.floor((new Date() - returnDate) / 86400000) : 0;
+      const itemNames  = resolveAdminItemNames(r[3]);
+
       html += `
         <div style="background:${isOverdue?'#fff5f5':'#f0faf6'};border:1px solid ${isOverdue?'#f5c6c6':'#b8e8d4'};border-left:4px solid ${isOverdue?'var(--danger)':'var(--success)'};border-radius:10px;padding:14px 16px;margin-bottom:10px;">
-          <div style="font-weight:700;color:var(--primary);font-size:14px;margin-bottom:8px;">📦 ${r[3]}</div>
-          <div style="font-size:13px;color:var(--text-muted);line-height:2;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600;">📋 Borrowed Items</div>
+          <ul style="list-style:none;padding:0;margin:0 0 10px 0;">
+            ${itemNames.map(n=>`<li style="font-size:14px;font-weight:600;color:var(--primary);padding:3px 0;border-bottom:1px solid rgba(0,0,0,0.06);">📦 ${n}</li>`).join("")}
+          </ul>
+          <div style="font-size:12px;color:var(--text-muted);line-height:2.1;">
             <div>📅 <strong>Borrowed:</strong> ${new Date(r[4]).toLocaleString()}</div>
             <div>⏰ <strong>Return by:</strong> <span style="color:${isOverdue?'var(--danger)':'inherit'};font-weight:${isOverdue?'700':'400'};">${returnDate.toLocaleString()}</span></div>
             ${isOverdue?`<div style="color:var(--danger);font-weight:700;">⚠️ ${daysOver} day${daysOver>1?'s':''} overdue!</div>`:''}
+            ${r[8]?`<div>👤 <strong>Lent by:</strong> ${r[8]}</div>`:''}
           </div>
           <span class="status-badge ${isOverdue?'status-overdue':'status-borrowed'}" style="margin-top:8px;">${isOverdue?'⚠️ Overdue':'Borrowed'}</span>
         </div>`;
     });
   }
 
+  // ── Returned borrows ──────────────────────────────────
   if (returned.length > 0) {
-    if (active.length>0) html += `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">`;
-    html += `<h4 style="color:var(--primary);font-size:14px;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">✅ Returned Items</h4>`;
+    if (active.length > 0) html += `<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">`;
+    html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--text-muted);margin-bottom:10px;">✅ Returned Items</div>`;
     returned.forEach(r => {
+      const itemNames = resolveAdminItemNames(r[3]);
       html += `
         <div style="background:#f4f7f6;border:1px solid var(--border);border-left:4px solid var(--success);border-radius:10px;padding:14px 16px;margin-bottom:10px;">
-          <div style="font-weight:700;color:var(--primary);font-size:14px;margin-bottom:8px;">📦 ${r[3]}</div>
-          <div style="font-size:13px;color:var(--text-muted);line-height:2;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600;">📋 Items Returned</div>
+          <ul style="list-style:none;padding:0;margin:0 0 10px 0;">
+            ${itemNames.map(n=>`<li style="font-size:14px;font-weight:600;color:var(--primary);padding:3px 0;border-bottom:1px solid rgba(0,0,0,0.06);">📦 ${n}</li>`).join("")}
+          </ul>
+          <div style="font-size:12px;color:var(--text-muted);line-height:2.1;">
             <div>📅 <strong>Borrowed:</strong> ${new Date(r[4]).toLocaleString()}</div>
             <div>📅 <strong>Due date:</strong> ${new Date(r[5]).toLocaleString()}</div>
+            ${r[8]?`<div>👤 <strong>Lent by:</strong> ${r[8]}</div>`:''}
           </div>
           <span class="status-badge status-returned" style="margin-top:8px;">✓ Returned</span>
         </div>`;
