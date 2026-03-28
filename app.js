@@ -28,7 +28,7 @@ function setLoading(button, isLoading) {
 }
 
 // ── Register (Borrower only) ──────────────────────────────
-function register() {
+function register(event) {
   const button = event.target;
 
   const name            = document.getElementById('name').value.trim();
@@ -84,7 +84,7 @@ function register() {
 }
 
 // ── Login ─────────────────────────────────────────────────
-function login() {
+function login(event) {
   const button = event.target;
 
   const email    = document.getElementById('email').value.trim();

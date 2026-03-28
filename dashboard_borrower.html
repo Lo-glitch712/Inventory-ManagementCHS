@@ -1,13 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Borrower Dashboard — CHS VITAL System</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <style>
-    .borrow-card {
+<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Borrower Dashboard — CHS VITAL System</title> <link rel="stylesheet" href="style.css"> <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script> <style> .borrow-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-left: 4px solid var(--primary);
@@ -42,7 +35,7 @@
     .return-modal-items ul li:last-child,
     .qr-items-summary ul li:last-child { border-bottom: none; }
     .items-group ul li::before         { content:"•"; color:var(--primary); font-weight:900; font-size:16px; line-height:1; }
-    .return-modal-items ul li::before  { content:"📦"; font-size:13px; }
+    .return-modal-items ul li::before  { content:""; font-size:13px; }
     .qr-items-summary ul li::before    { content:"✓"; color:var(--success); font-weight:700; }
 
     .borrow-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
@@ -227,262 +220,28 @@
     .items-page-info { font-size: 12px; color: var(--text-muted); font-weight: 500; text-align: center; flex: 1; }
   </style>
 </head>
-<body class="dashboard-body">
-
-<div class="page-header">
-  <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1>
-  <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
-</div>
-
-<div class="navbar">
-  <h1>📦 Borrower Dashboard</h1>
-  <div class="navbar-right">
-    <span>Welcome, <strong id="userName"></strong></span>
-    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-  </div>
-</div>
-
-<div id="sideMenu" class="side-menu">
-  <button class="close-btn" onclick="toggleMenu()">✕</button>
-  <div class="side-menu-header">
-    <strong id="sideUserName">User</strong>
-    <p>Borrower</p>
-  </div>
-  <div class="menu-content">
-    <button onclick="openProfile()" class="menu-btn">👤 My Profile</button>
-    <button onclick="changePassword()" class="menu-btn">🔐 Change Password</button>
-    <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.12);">
-    <button onclick="logout()" class="menu-btn danger">🚪 Logout</button>
-  </div>
-</div>
-
-<!-- Profile Modal -->
-<div id="profileModal" class="modal" style="justify-content:center;align-items:center;padding:20px;">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>👤 My Profile</h3>
-      <button class="close-btn" onclick="closeProfile()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label>Full Name</label><input type="text" id="profileName" readonly style="background:#f4f7f6;color:#777;"></div>
-      <div class="form-group"><label>School ID Number</label><input type="text" id="profileIdNumber" placeholder="e.g., 2024-00123"></div>
-      <div class="form-group"><label>Email</label><input type="email" id="profileEmail" readonly style="background:#f4f7f6;color:#777;"></div>
-      <div class="form-group"><label>Contact Number</label><input type="tel" id="profileContact"></div>
-      <div class="form-group"><label>Department / Course</label><input type="text" id="profileDepartment"></div>
-      <div class="form-group"><label>Year Level</label><input type="number" id="profileYear"></div>
-      <button onclick="saveProfile()">💾 Save Changes</button>
-    </div>
-  </div>
-</div>
-
-<!-- Password Modal -->
-<div id="passwordModal" class="modal" style="justify-content:center;align-items:center;padding:20px;">
-  <div class="modal-content" style="max-width:400px;">
-    <div class="modal-header">
-      <h3>🔐 Change Password</h3>
-      <button class="close-btn" onclick="closePassword()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label>Current Password</label><input type="password" id="currentPassword" placeholder="Enter current password"></div>
-      <div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="At least 8 characters" minlength="8"></div>
-      <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password"></div>
-      <button onclick="updatePassword()">✓ Update Password</button>
-    </div>
-  </div>
-</div>
-
-<!-- Return QR Modal -->
-<div id="returnModal" class="modal" style="justify-content:center;align-items:center;padding:20px;">
-  <div class="modal-content" style="max-width:460px;">
-    <div class="modal-header">
-      <h3>📥 Return QR Code</h3>
-      <button class="close-btn" onclick="closeReturnModal()">✕</button>
-    </div>
-    <div class="modal-body" style="text-align:center;">
-      <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">
-        Show this QR code to the instructor or student assistant to process your return.
-      </p>
-      <div class="return-modal-items">
-        <p>Items to Return</p>
-        <ul id="returnItemsList"></ul>
-      </div>
-      <canvas id="returnQRcode" style="display:block;margin:0 auto;"></canvas>
-      <p style="color:#bbb;font-size:12px;margin-top:12px;">Stock will be restored automatically after scanning</p>
-      <button onclick="saveReturnQR()" style="width:auto;padding:10px 24px;margin-top:12px;background:var(--primary);">💾 Save QR Image</button>
-    </div>
-  </div>
-</div>
-
-<div class="dashboard-main">
-  <!-- Arrow tab navigation -->
-  <div class="tab-nav" id="tabNav">
-    <button class="tab-arrow" id="tabPrev" onclick="navTab(-1)" disabled>&#8592;</button>
-    <div class="tab-indicator-wrap">
-      <div class="tab-label" id="tabLabel">📦 Borrow Items</div>
-      <div class="tab-dots" id="tabDots"></div>
-    </div>
-    <button class="tab-arrow" id="tabNext" onclick="navTab(1)">&#8594;</button>
-  </div>
-
-  <!-- TAB: Borrow -->
-  <div id="borrow-tab" class="tab-content active">
-    <div class="card">
-      <h3>📋 Equipment Borrowing Form</h3>
-
-      <!-- Borrower Info Section -->
-      <div style="background:var(--surface-alt);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:10px;padding:16px 18px;margin-bottom:20px;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);margin-bottom:14px;">👤 Borrower Information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
-          <div class="form-group">
-            <label>Borrower Name</label>
-            <input type="text" id="borrowerNameDisplay" readonly
-              style="background:#f4f7f6;color:#555;font-weight:600;">
-          </div>
-          <div class="form-group">
-            <label>ID Number <span style="color:var(--danger);">*</span></label>
-            <input type="text" id="borrowerIdNumber" placeholder="e.g., 2024-00123">
-          </div>
-          <div class="form-group">
-            <label>Course, Year &amp; Section <span style="color:var(--danger);">*</span></label>
-            <input type="text" id="borrowerCourse" placeholder="e.g., BSN 2C">
-          </div>
-          <div class="form-group">
-            <label>Date</label>
-            <input type="date" id="borrowerDate" readonly
-              style="background:#f4f7f6;color:#555;">
-          </div>
-        </div>
-      </div>
-
-      <!-- Procedure Details Section -->
-      <div style="background:var(--surface-alt);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:16px 18px;margin-bottom:20px;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);margin-bottom:4px;">🔬 Procedure <span style="color:var(--danger);">*</span></div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Tap a procedure — recommended items will be auto-selected below.</div>
-
-        <!-- Hidden input stores the selected procedure value -->
-        <input type="hidden" id="borrowProcedure" value="">
-
-        <!-- Procedure Cards Grid -->
-        <div id="procedureCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:14px;"></div>
-
-        <!-- Selected Procedure display (shown after selection) -->
-        <div id="selectedProcedureDisplay" style="display:none;background:#f0faf6;border:1.5px solid var(--success);border-radius:8px;padding:10px 14px;margin-bottom:14px;align-items:center;gap:10px;">
-          <span style="font-size:18px;">&#x2705;</span>
-          <span style="font-size:14px;font-weight:700;color:var(--primary);" id="selectedProcedureLabel"></span>
-          <button onclick="clearSelectedProcedure()" style="margin-left:auto;width:auto;padding:4px 10px;font-size:12px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:6px;margin-top:0;">Change</button>
-        </div>
-
-        <!-- Extra fields row -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
-          <div class="form-group">
-            <label>Attested By</label>
-            <select id="borrowAttestedBy">
-              <option value="">— Select —</option>
-              <option value="Clinical Instructor">Clinical Instructor</option>
-              <option value="Student Assistant">Student Assistant</option>
-              <option value="Lab Coordinator">Lab Coordinator</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Notes (Optional)</label>
-            <input type="text" id="borrowNotes" placeholder="Any remarks...">
-          </div>
-        </div>
-      </div>
-
-      <!-- Procedure Kit Banner (shown when procedure auto-maps items) -->
-      <div id="procedureKitBanner" style="display:none;background:linear-gradient(135deg,#e8f6f0,#f0faf6);border:1.5px solid var(--success);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="font-size:20px;">🧰</span>
-          <span style="font-weight:700;color:var(--success);font-size:14px;">Procedure Kit Auto-Selected</span>
-          <button onclick="clearProcedureKit()" style="margin-left:auto;width:auto;padding:4px 12px;font-size:12px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:6px;">Clear Kit</button>
-        </div>
-        <div style="font-size:13px;color:var(--text-muted);">The recommended items for <strong id="kitProcedureName" style="color:var(--primary);"></strong> have been pre-selected below. You may add or remove items as needed.</div>
-      </div>
-
-      <!-- Shelf / Location Filter -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);">📦 Select Items to Borrow</div>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--text-muted);font-weight:600;">📚 Shelf:</span>
-          <select id="shelfFilter" onchange="filterItems()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;cursor:pointer;">
-            <option value="">All Shelves</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <input id="searchItems" type="text" placeholder="🔍 Search by name..." oninput="filterItems()"
+<body class="dashboard-body"> <div class="page-header"> <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1> <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
+</div> <div class="navbar"> <h1> Borrower Dashboard</h1> <div class="navbar-right"> <span>Welcome, <strong id="userName"></strong></span> <button class="menu-toggle" onclick="toggleMenu()">Menu</button> </div>
+</div> <div id="sideMenu" class="side-menu"> <button class="close-btn" onclick="toggleMenu()">×</button> <div class="side-menu-header"> <strong id="sideUserName">User</strong> <p>Borrower</p> </div> <div class="menu-content"> <button onclick="openProfile()" class="menu-btn"> My Profile</button> <button onclick="changePassword()" class="menu-btn"> Change Password</button> <hr style="margin:10px 0;border:none;border-top:1px solid rgba(255,255,255,0.12);"> <button onclick="logout()" class="menu-btn danger"> Logout</button> </div>
+</div> <!-- Profile Modal -->
+<div id="profileModal" class="modal" style="justify-content:center;align-items:center;padding:20px;"> <div class="modal-content"> <div class="modal-header"> <h3> My Profile</h3> <button class="close-btn" onclick="closeProfile()">×</button> </div> <div class="modal-body"> <div class="form-group"><label>Full Name</label><input type="text" id="profileName" readonly style="background:#f4f7f6;color:#777;"></div> <div class="form-group"><label>School ID Number</label><input type="text" id="profileIdNumber" placeholder="e.g., 2024-00123"></div> <div class="form-group"><label>Email</label><input type="email" id="profileEmail" readonly style="background:#f4f7f6;color:#777;"></div> <div class="form-group"><label>Contact Number</label><input type="tel" id="profileContact"></div> <div class="form-group"><label>Department / Course</label><input type="text" id="profileDepartment"></div> <div class="form-group"><label>Year Level</label><input type="number" id="profileYear"></div> <button onclick="saveProfile()"> Save Changes</button> </div> </div>
+</div> <!-- Password Modal -->
+<div id="passwordModal" class="modal" style="justify-content:center;align-items:center;padding:20px;"> <div class="modal-content" style="max-width:400px;"> <div class="modal-header"> <h3> Change Password</h3> <button class="close-btn" onclick="closePassword()">×</button> </div> <div class="modal-body"> <div class="form-group"><label>Current Password</label><input type="password" id="currentPassword" placeholder="Enter current password"></div> <div class="form-group"><label>New Password</label><input type="password" id="newPassword" placeholder="At least 8 characters" minlength="8"></div> <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirmPassword" placeholder="Repeat new password"></div> <button onclick="updatePassword()">✓ Update Password</button> </div> </div>
+</div> <!-- Return QR Modal -->
+<div id="returnModal" class="modal" style="justify-content:center;align-items:center;padding:20px;"> <div class="modal-content" style="max-width:460px;"> <div class="modal-header"> <h3> Return QR Code</h3> <button class="close-btn" onclick="closeReturnModal()">×</button> </div> <div class="modal-body" style="text-align:center;"> <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;"> Show this QR code to the instructor or student assistant to process your return.
+      </p> <div class="return-modal-items"> <p>Items to Return</p> <ul id="returnItemsList"></ul> </div> <canvas id="returnQRcode" style="display:block;margin:0 auto;"></canvas> <p style="color:#bbb;font-size:12px;margin-top:12px;">Stock will be restored automatically after scanning</p> <button onclick="saveReturnQR()" style="width:auto;padding:10px 24px;margin-top:12px;background:var(--primary);"> Save QR Image</button> </div> </div>
+</div> <div class="dashboard-main"> <!-- Arrow tab navigation --> <div class="tab-nav" id="tabNav"> <button class="tab-arrow" id="tabPrev" onclick="navTab(-1)" disabled>&#8592;</button> <div class="tab-indicator-wrap"> <div class="tab-label" id="tabLabel"> Borrow Items</div> <div class="tab-dots" id="tabDots"></div> </div> <button class="tab-arrow" id="tabNext" onclick="navTab(1)">&#8594;</button> </div> <!-- TAB: Borrow --> <div id="borrow-tab" class="tab-content active"> <div class="card"> <h3> Equipment Borrowing Form</h3> <!-- Borrower Info Section --> <div style="background:var(--surface-alt);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:10px;padding:16px 18px;margin-bottom:20px;"> <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);margin-bottom:14px;"> Borrower Information</div> <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;"> <div class="form-group"> <label>Borrower Name</label> <input type="text" id="borrowerNameDisplay" readonly
+              style="background:#f4f7f6;color:#555;font-weight:600;"> </div> <div class="form-group"> <label>ID Number <span style="color:var(--danger);">*</span></label> <input type="text" id="borrowerIdNumber" placeholder="e.g., 2024-00123"> </div> <div class="form-group"> <label>Course, Year &amp; Section <span style="color:var(--danger);">*</span></label> <input type="text" id="borrowerCourse" placeholder="e.g., BSN 2C"> </div> <div class="form-group"> <label>Date</label> <input type="date" id="borrowerDate" readonly
+              style="background:#f4f7f6;color:#555;"> </div> </div> </div> <!-- Procedure Details Section --> <div style="background:var(--surface-alt);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:16px 18px;margin-bottom:20px;"> <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);margin-bottom:4px;"> Procedure <span style="color:var(--danger);">*</span></div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Tap a procedure — recommended items will be auto-selected below.</div> <!-- Hidden input stores the selected procedure value --> <input type="hidden" id="borrowProcedure" value=""> <!-- Procedure Cards Grid --> <div id="procedureCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:14px;"></div> <!-- Selected Procedure display (shown after selection) --> <div id="selectedProcedureDisplay" style="display:none;background:#f0faf6;border:1.5px solid var(--success);border-radius:8px;padding:10px 14px;margin-bottom:14px;align-items:center;gap:10px;"> <span style="font-size:18px;">&#x2705;</span> <span style="font-size:14px;font-weight:700;color:var(--primary);" id="selectedProcedureLabel"></span> <button onclick="clearSelectedProcedure()" style="margin-left:auto;width:auto;padding:4px 10px;font-size:12px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:6px;margin-top:0;">Change</button> </div> <!-- Extra fields row --> <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;"> <div class="form-group"> <label>Attested By</label> <select id="borrowAttestedBy"> <option value="">— Select —</option> <option value="Clinical Instructor">Clinical Instructor</option> <option value="Student Assistant">Student Assistant</option> <option value="Lab Coordinator">Lab Coordinator</option> </select> </div> <div class="form-group"> <label>Notes (Optional)</label> <input type="text" id="borrowNotes" placeholder="Any remarks..."> </div> </div> </div> <!-- Procedure Kit Banner (shown when procedure auto-maps items) --> <div id="procedureKitBanner" style="display:none;background:linear-gradient(135deg,#e8f6f0,#f0faf6);border:1.5px solid var(--success);border-radius:10px;padding:14px 18px;margin-bottom:16px;"> <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"> <span style="font-size:20px;"></span> <span style="font-weight:700;color:var(--success);font-size:14px;">Procedure Kit Auto-Selected</span> <button onclick="clearProcedureKit()" style="margin-left:auto;width:auto;padding:4px 12px;font-size:12px;background:transparent;color:var(--text-muted);border:1px solid var(--border);border-radius:6px;">Clear Kit</button> </div> <div style="font-size:13px;color:var(--text-muted);">The recommended items for <strong id="kitProcedureName" style="color:var(--primary);"></strong> have been pre-selected below. You may add or remove items as needed.</div> </div> <!-- Shelf / Location Filter --> <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;"> <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:700;color:var(--primary);"> Select Items to Borrow</div> <div style="margin-left:auto;display:flex;align-items:center;gap:8px;"> <span style="font-size:12px;color:var(--text-muted);font-weight:600;"> Shelf:</span> <select id="shelfFilter" onchange="filterItems()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;cursor:pointer;"> <option value="">All Shelves</option> </select> </div> </div> <div class="form-group"> <input id="searchItems" type="text" placeholder=" Search by name..." oninput="filterItems()"
           style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s;"
-          onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
-      </div>
-      <div id="itemsList"></div>
-      <div class="items-page-nav" id="itemsPageNav" style="display:none;">
-        <button class="items-page-btn" id="itemsPrev" onclick="itemsPageNav(-1)">← Prev</button>
-        <span class="items-page-info" id="itemsPageInfo"></span>
-        <button class="items-page-btn" id="itemsNext" onclick="itemsPageNav(1)">Next →</button>
-      </div>
-
-      <!-- Return Date -->
-      <div class="form-group" style="margin-top:20px;">
-        <label style="font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:10px;">
-          📅 Expected Return Date &amp; Time
-        </label>
-        <div style="position:relative;">
-          <input type="datetime-local" id="returnDate" required
+          onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"> </div> <div id="itemsList"></div> <div class="items-page-nav" id="itemsPageNav" style="display:none;"> <button class="items-page-btn" id="itemsPrev" onclick="itemsPageNav(-1)">← Prev</button> <span class="items-page-info" id="itemsPageInfo"></span> <button class="items-page-btn" id="itemsNext" onclick="itemsPageNav(1)">Next →</button> </div> <!-- Return Date --> <div class="form-group" style="margin-top:20px;"> <label style="font-size:13px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:10px;"> Expected Return Date &amp; Time
+        </label> <div style="position:relative;"> <input type="datetime-local" id="returnDate" required
             style="width:100%;padding:14px 16px 14px 44px;border:2px solid var(--border);border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s,box-shadow 0.2s;box-sizing:border-box;appearance:none;-webkit-appearance:none;"
             onfocus="this.style.borderColor='var(--primary)';this.style.boxShadow='0 0 0 3px rgba(13,79,79,0.12)'"
-            onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🗓️</span>
-        </div>
-        <div id="returnDateQuick" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div>
-      </div>
-
-      <!-- Confirmation Checkbox -->
-      <div style="background:#f0faf6;border:1px solid #b8e8d4;border-radius:10px;padding:14px 16px;margin-top:18px;display:flex;align-items:flex-start;gap:12px;">
-        <input type="checkbox" id="borrowConfirm"
-          style="width:18px;height:18px;margin-top:2px;accent-color:var(--primary);flex-shrink:0;cursor:pointer;">
-        <label for="borrowConfirm" style="font-size:13px;color:var(--text-main);line-height:1.6;cursor:pointer;font-weight:500;">
-          I confirm that the information above is accurate and I agree to return all borrowed items in good condition by the due date.
-        </label>
-      </div>
-
-      <button onclick="generateQR()" style="margin-top:18px;">🔖 Generate Borrow QR Code</button>
-
-      <div id="qrResultBox" class="qr-result-box" style="display:none;">
-        <p class="qr-title">Borrow QR Code</p>
-        <p class="qr-subtitle">Show this to the instructor or SA at the counter</p>
-        <canvas id="qrcode" style="display:block;margin:0 auto;"></canvas>
-        <div class="qr-items-summary">
-          <p>Items Selected</p>
-          <ul id="qrItemsList"></ul>
-        </div>
-        <div id="qrFormSummary" style="background:var(--surface-alt);border-radius:8px;padding:12px 16px;margin:12px 0;text-align:left;font-size:13px;color:var(--text-muted);line-height:2;"></div>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
-          <button onclick="saveQRCode()" style="width:auto;padding:10px 22px;background:var(--success);margin-top:0;">💾 Save QR Image</button>
-          <button onclick="resetBorrowForm()" style="width:auto;padding:10px 22px;background:var(--surface-alt);color:var(--text-main);border:1.5px solid var(--border);margin-top:0;">↩ New Borrow</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: My Borrows -->
-  <div id="borrowed-tab" class="tab-content">
-    <div class="card">
-      <h3>🔄 Currently Borrowed</h3>
-      <div id="borrowedItemsList"></div>
-    </div>
-  </div>
-
-  <!-- TAB: History -->
-  <div id="history-tab" class="tab-content">
-    <div class="card">
-      <h3>📋 Borrow History</h3>
-      <div id="historyList"></div>
-    </div>
-  </div>
-</div>
-
-<script src="app.js"></script>
+            onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'"> <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">️</span> </div> <div id="returnDateQuick" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"></div> </div> <!-- Confirmation Checkbox --> <div style="background:#f0faf6;border:1px solid #b8e8d4;border-radius:10px;padding:14px 16px;margin-top:18px;display:flex;align-items:flex-start;gap:12px;"> <input type="checkbox" id="borrowConfirm"
+          style="width:18px;height:18px;margin-top:2px;accent-color:var(--primary);flex-shrink:0;cursor:pointer;"> <label for="borrowConfirm" style="font-size:13px;color:var(--text-main);line-height:1.6;cursor:pointer;font-weight:500;"> I confirm that the information above is accurate and I agree to return all borrowed items in good condition by the due date.
+        </label> </div> <button onclick="generateQR()" style="margin-top:18px;"> Generate Borrow QR Code</button> <div id="qrResultBox" class="qr-result-box" style="display:none;"> <p class="qr-title">Borrow QR Code</p> <p class="qr-subtitle">Show this to the instructor or SA at the counter</p> <canvas id="qrcode" style="display:block;margin:0 auto;"></canvas> <div class="qr-items-summary"> <p>Items Selected</p> <ul id="qrItemsList"></ul> </div> <div id="qrFormSummary" style="background:var(--surface-alt);border-radius:8px;padding:12px 16px;margin:12px 0;text-align:left;font-size:13px;color:var(--text-muted);line-height:2;"></div> <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px;"> <button onclick="saveQRCode()" style="width:auto;padding:10px 22px;background:var(--success);margin-top:0;"> Save QR Image</button> <button onclick="resetBorrowForm()" style="width:auto;padding:10px 22px;background:var(--surface-alt);color:var(--text-main);border:1.5px solid var(--border);margin-top:0;">↩ New Borrow</button> </div> </div> </div> </div> <!-- TAB: My Borrows --> <div id="borrowed-tab" class="tab-content"> <div class="card"> <h3> Currently Borrowed</h3> <div id="borrowedItemsList"></div> </div> </div> <!-- TAB: History --> <div id="history-tab" class="tab-content"> <div class="card"> <h3> Borrow History</h3> <div id="historyList"></div> </div> </div>
+</div> <script src="app.js"></script>
 <script>
 let selectedItems   = [];
 let itemNameMap     = {};   // itemId → display name
@@ -520,9 +279,9 @@ document.addEventListener("click", e => {
 // ── Tabs ──────────────────────────────────────────────────
 // ── Arrow Tab Navigation ─────────────────────────────────
 const TAB_DEFS = [
-  { id: 'borrow-tab',   label: '📦 Borrow Items' },
-  { id: 'borrowed-tab', label: '🔄 My Borrows' },
-  { id: 'history-tab',  label: '📋 History' }
+  { id: 'borrow-tab',   label: ' Borrow Items' },
+  { id: 'borrowed-tab', label: ' My Borrows' },
+  { id: 'history-tab',  label: ' History' }
 ];
 let _currentTabIdx = 0;
 
@@ -657,7 +416,7 @@ function loadItems() {
     _allItemRows    = [];
 
     if (!data || data.length <= 1) {
-      document.getElementById("itemsList").innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items available</div>";
+      document.getElementById("itemsList").innerHTML = "<div class='empty-state'><div class='icon'></div>No items available</div>";
       document.getElementById("itemsPageNav").style.display = "none";
       return;
     }
@@ -691,7 +450,7 @@ function renderItemsPage() {
   const total     = _filteredItems.length;
 
   if (total === 0) {
-    container.innerHTML = "<div class='empty-state'><div class='icon'>🔍</div>No matching items</div>";
+    container.innerHTML = "<div class='empty-state'><div class='icon'></div>No matching items</div>";
     nav.style.display = "none"; return;
   }
 
@@ -707,7 +466,7 @@ function renderItemsPage() {
       ? `<span style="font-size:11px;background:#e8f0ff;color:#2d4fa0;padding:2px 8px;border-radius:10px;font-weight:600;">Consumable</span>`
       : `<span style="font-size:11px;background:#f0faf6;color:#1a5a3e;padding:2px 8px;border-radius:10px;font-weight:600;">Non-Consumable</span>`;
     const locPill = loc
-      ? `<span style="font-size:11px;background:#f5f0e8;color:#7a5c1e;padding:2px 8px;border-radius:10px;font-weight:600;">📚 ${loc}</span>`
+      ? `<span style="font-size:11px;background:#f5f0e8;color:#7a5c1e;padding:2px 8px;border-radius:10px;font-weight:600;"> ${loc}</span>`
       : "";
     const isSelected = selectedItems.find(i => i.id === itemId);
     const el = document.createElement("div");
@@ -715,19 +474,8 @@ function renderItemsPage() {
     el.id = `ti_${itemId}`;
     if (avail) el.onclick = () => tapItem(itemId);
     el.innerHTML = `
-      <div style="flex:1;">
-        <div style="font-weight:600;font-size:14px;color:var(--primary);">${name}${size ? ` <em style="color:var(--text-muted);font-weight:400;font-size:13px;">— ${size}</em>` : ""}</div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
-          ${typePill}${locPill}
-          <span style="font-size:12px;font-weight:600;color:${avail ? "var(--success)" : "var(--danger)"};">${avail ? `Stock: ${stock}` : "Out of stock"}</span>
-        </div>
-      </div>
-      <div class="tap-qty-box" id="qty_${itemId}" style="display:${isSelected ? "flex" : "none"};">
-        <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',-1)">−</button>
-        <span class="qty-num" id="qtynum_${itemId}">${isSelected ? isSelected.qty : 1}</span>
-        <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',1,'${stock}')">+</button>
-      </div>
-      <div class="tap-check" id="chk_${itemId}" style="display:${isSelected ? "flex" : "none"};">✓</div>`;
+      <div style="flex:1;"> <div style="font-weight:600;font-size:14px;color:var(--primary);">${name}${size ? ` <em style="color:var(--text-muted);font-weight:400;font-size:13px;">— ${size}</em>` : ""}</div> <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;"> ${typePill}${locPill}
+          <span style="font-size:12px;font-weight:600;color:${avail ? "var(--success)" : "var(--danger)"};">${avail ? `Stock: ${stock}` : "Out of stock"}</span> </div> </div> <div class="tap-qty-box" id="qty_${itemId}" style="display:${isSelected ? "flex" : "none"};"> <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',-1)">−</button> <span class="qty-num" id="qtynum_${itemId}">${isSelected ? isSelected.qty : 1}</span> <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',1,'${stock}')">+</button> </div> <div class="tap-check" id="chk_${itemId}" style="display:${isSelected ? "flex" : "none"};">✓</div>`;
     container.appendChild(el);
   });
 
@@ -787,14 +535,14 @@ function filterItems() {
 
 // ── The 8 Procedures (always shown as cards) ─────────────
 const PROCEDURE_LIST = [
-  { name: "Hand Washing",          icon: "🧼", color: "#e8f4ff", border: "#90c8f0" },
-  { name: "Wound Care",            icon: "🩹", color: "#fff4e8", border: "#f0b87a" },
-  { name: "Internal Examination",  icon: "🔍", color: "#f4e8ff", border: "#c890f0" },
-  { name: "Female Catheterization",icon: "💧", color: "#e8fff4", border: "#70d4a0" },
-  { name: "Leopold's Maneuver",    icon: "🤰", color: "#fff8e8", border: "#f0d070" },
-  { name: "Perianal Flushing",     icon: "♻️", color: "#e8f8ff", border: "#70c8e8" },
-  { name: "Newborn Care",          icon: "👶", color: "#fff0f4", border: "#f090b0" },
-  { name: "Intrapartum Care",      icon: "🏥", color: "#f0fff0", border: "#70d070" }
+  { name: "Hand Washing",          icon: "", color: "#e8f4ff", border: "#90c8f0" },
+  { name: "Wound Care",            icon: "", color: "#fff4e8", border: "#f0b87a" },
+  { name: "Internal Examination",  icon: "", color: "#f4e8ff", border: "#c890f0" },
+  { name: "Female Catheterization",icon: "", color: "#e8fff4", border: "#70d4a0" },
+  { name: "Leopold's Maneuver",    icon: "", color: "#fff8e8", border: "#f0d070" },
+  { name: "Perianal Flushing",     icon: "️", color: "#e8f8ff", border: "#70c8e8" },
+  { name: "Newborn Care",          icon: "", color: "#fff0f4", border: "#f090b0" },
+  { name: "Intrapartum Care",      icon: "", color: "#f0fff0", border: "#70d070" }
 ];
 
 // ── Procedure → Item keyword mapping ────────────────────
@@ -838,8 +586,7 @@ function buildProcedureCards() {
       padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.2s ease;
       user-select:none;`;
     card.innerHTML = `
-      <div style="font-size:28px;margin-bottom:8px;">${proc.icon}</div>
-      <div style="font-size:13px;font-weight:700;color:var(--primary);line-height:1.3;">${proc.name}</div>`;
+      <div style="font-size:28px;margin-bottom:8px;">${proc.icon}</div> <div style="font-size:13px;font-weight:700;color:var(--primary);line-height:1.3;">${proc.name}</div>`;
     card.onclick = () => selectProcedure(proc.name);
     card.onmouseover = () => { if (document.getElementById("borrowProcedure").value !== proc.name) card.style.transform = "translateY(-3px)"; card.style.boxShadow = "0 6px 18px rgba(0,0,0,0.12)"; };
     card.onmouseout  = () => { if (document.getElementById("borrowProcedure").value !== proc.name) { card.style.transform = ""; card.style.boxShadow = ""; } };
@@ -1055,12 +802,12 @@ function generateQR() {
   const summaryEl = document.getElementById("qrFormSummary");
   if (summaryEl) {
     summaryEl.innerHTML = [
-      course    ? `<div>📚 <strong>Course:</strong> ${course}</div>` : '',
-      idNumber  ? `<div>🪪 <strong>ID:</strong> ${idNumber}</div>` : '',
-      subject   ? `<div>📖 <strong>Subject:</strong> ${subject}</div>` : '',
-      procedure ? `<div>🔬 <strong>Procedure:</strong> ${procedure}</div>` : '',
-      attestedBy? `<div>✍️ <strong>Attested by:</strong> ${attestedBy}</div>` : '',
-      notes     ? `<div>📝 <strong>Notes:</strong> ${notes}</div>` : ''
+      course    ? `<div> <strong>Course:</strong> ${course}</div>` : '',
+      idNumber  ? `<div> <strong>ID:</strong> ${idNumber}</div>` : '',
+      subject   ? `<div> <strong>Subject:</strong> ${subject}</div>` : '',
+      procedure ? `<div> <strong>Procedure:</strong> ${procedure}</div>` : '',
+      attestedBy? `<div>️ <strong>Attested by:</strong> ${attestedBy}</div>` : '',
+      notes     ? `<div> <strong>Notes:</strong> ${notes}</div>` : ''
     ].filter(Boolean).join("");
   }
 
@@ -1189,7 +936,7 @@ function renderBorrowedItems(serverData) {
   }
 
   if (!hasAny)
-    container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
+    container.innerHTML = "<div class='empty-state'><div class='icon'></div>No items currently borrowed</div>";
 }
 
 function buildBorrowCard({ itemNames, itemTypes, returnDate, isOverdue, qrPayload }) {
@@ -1223,10 +970,7 @@ function buildBorrowCard({ itemNames, itemTypes, returnDate, isOverdue, qrPayloa
   const titleText = single ? allItemNames[0] : `${allItemNames.length} Items Borrowed`;
 
   const groupHTML = !single ? `
-    <div class="items-group">
-      <div class="items-group-label">Items in this borrow</div>
-      <ul>${allItemNames.map((n,i)=>`<li>${n}${typeList[i]==='Consumable'?' <em style="font-size:11px;color:#2d4fa0;">(consumable)</em>':''}</li>`).join("")}</ul>
-    </div>` : "";
+    <div class="items-group"> <div class="items-group-label">Items in this borrow</div> <ul>${allItemNames.map((n,i)=>`<li>${n}${typeList[i]==='Consumable'?' <em style="font-size:11px;color:#2d4fa0;">(consumable)</em>':''}</li>`).join("")}</ul> </div>` : "";
 
   const cardId = 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2);
   window._returnQRStore = window._returnQRStore || {};
@@ -1234,8 +978,7 @@ function buildBorrowCard({ itemNames, itemTypes, returnDate, isOverdue, qrPayloa
 
   const returnBtn = hasReturnables
     ? `<button onclick="showReturnQRById('${cardId}')"
-        style="width:auto;padding:10px 20px;background:var(--primary);margin-top:0;font-size:13px;">
-        📥 Return Item${returnableNames.length>1?'s':''}
+        style="width:auto;padding:10px 20px;background:var(--primary);margin-top:0;font-size:13px;"> Return Item${returnableNames.length>1?'s':''}
       </button>`
     : `<div style="font-size:13px;color:var(--text-muted);font-style:italic;">✓ All consumable items — no return needed</div>`;
 
@@ -1245,27 +988,20 @@ function buildBorrowCard({ itemNames, itemTypes, returnDate, isOverdue, qrPayloa
   const cardIdNum  = (parsedPayload && parsedPayload.idNumber)  ? parsedPayload.idNumber  : "";
 
   const procBadge = cardProc ? `
-    <div style="display:inline-flex;align-items:center;gap:6px;background:#f0faf6;border:1px solid #b0dcc8;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px;">
-      🔬 ${cardProc}
+    <div style="display:inline-flex;align-items:center;gap:6px;background:#f0faf6;border:1px solid #b0dcc8;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px;"> ${cardProc}
     </div>` : "";
 
   const cardMeta = [
-    cardIdNum  ? `<p><strong>🪪 ID:</strong> ${cardIdNum}</p>`     : "",
-    cardCourse ? `<p><strong>📚 Course:</strong> ${cardCourse}</p>` : ""
+    cardIdNum  ? `<p><strong> ID:</strong> ${cardIdNum}</p>`     : "",
+    cardCourse ? `<p><strong> Course:</strong> ${cardCourse}</p>` : ""
   ].filter(Boolean).join("");
 
   return `
-    <div class="borrow-card ${isOverdue?'overdue':''}">
-      ${procBadge}
-      <div class="borrow-card-title">${isOverdue?'⚠️ OVERDUE — ':''}${titleText}</div>
-      <div class="borrow-card-meta">
-        ${cardMeta}
-        <p><strong>Return by:</strong> ${returnDate.toLocaleString()}</p>
-        ${isOverdue?'<p style="color:var(--danger);font-weight:600;">Please return immediately!</p>':''}
-      </div>
-      ${groupHTML}
-      <div class="borrow-actions">${returnBtn}</div>
-    </div>`;
+    <div class="borrow-card ${isOverdue?'overdue':''}"> ${procBadge}
+      <div class="borrow-card-title">${isOverdue?' OVERDUE — ':''}${titleText}</div> <div class="borrow-card-meta"> ${cardMeta}
+        <p><strong>Return by:</strong> ${returnDate.toLocaleString()}</p> ${isOverdue?'<p style="color:var(--danger);font-weight:600;">Please return immediately!</p>':''}
+      </div> ${groupHTML}
+      <div class="borrow-actions">${returnBtn}</div> </div>`;
 }
 
 // ── Return QR Modal ───────────────────────────────────────
@@ -1327,7 +1063,7 @@ function loadBorrowHistory() {
     container.innerHTML = "";
 
     if (!data || data.length === 0 || data.error) {
-      container.innerHTML = "<div class='empty-state'><div class='icon'>📋</div>No borrow history yet</div>";
+      container.innerHTML = "<div class='empty-state'><div class='icon'></div>No borrow history yet</div>";
       return;
     }
 
@@ -1364,14 +1100,10 @@ function loadBorrowHistory() {
         : `<span class="status-badge status-borrowed">Borrowed</span>`;
 
       const groupHTML = !single ? `
-        <div class="items-group" style="margin:8px 0;">
-          <div class="items-group-label">Items</div>
-          <ul>${itemNames.map(n=>`<li>${n}</li>`).join("")}</ul>
-        </div>` : "";
+        <div class="items-group" style="margin:8px 0;"> <div class="items-group-label">Items</div> <ul>${itemNames.map(n=>`<li>${n}</li>`).join("")}</ul> </div>` : "";
 
       const procBadge = recProc ? `
-        <div style="display:inline-flex;align-items:center;gap:6px;background:#f0faf6;border:1px solid #b0dcc8;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px;">
-          🔬 ${recProc}
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#f0faf6;border:1px solid #b0dcc8;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px;"> ${recProc}
         </div>` : "";
 
       const metaExtra = [
@@ -1384,26 +1116,20 @@ function loadBorrowHistory() {
       try { returnDateStr = new Date(returnDateV).toLocaleString(); } catch(e){}
 
       container.innerHTML += `
-        <div class="borrow-card">
-          ${procBadge}
-          <div class="borrow-card-title">${titleText}</div>
-          ${groupHTML}
-          <div class="borrow-card-meta">
-            ${metaExtra}
-            <p><strong>Borrowed:</strong> ${borrowDateStr}</p>
-            <p><strong>Return date:</strong> ${returnDateStr}</p>
-          </div>
-          ${badge}
+        <div class="borrow-card"> ${procBadge}
+          <div class="borrow-card-title">${titleText}</div> ${groupHTML}
+          <div class="borrow-card-meta"> ${metaExtra}
+            <p><strong>Borrowed:</strong> ${borrowDateStr}</p> <p><strong>Return date:</strong> ${returnDateStr}</p> </div> ${badge}
         </div>`;
     });
 
     if (container.innerHTML === "") {
-      container.innerHTML = "<div class='empty-state'><div class='icon'>📋</div>No history yet</div>";
+      container.innerHTML = "<div class='empty-state'><div class='icon'></div>No history yet</div>";
     }
   })
   .catch(err => {
     console.error("History error:", err);
-    container.innerHTML = "<div class='empty-state' style='color:var(--danger);'>❌ Failed to load history. Please try again.</div>";
+    container.innerHTML = "<div class='empty-state' style='color:var(--danger);'>× Failed to load history. Please try again.</div>";
   });
 }
 
@@ -1436,7 +1162,7 @@ function checkOverdueItems() {
         const name = resolveItemNames(String(i.itemName||i.itemId||""))[0];
         return `${name} (${i.daysOverdue}d)`;
       }).join(", ");
-      showNotification(`⚠️ Overdue: ${list}`,"error");
+      showNotification(` Overdue: ${list}`,"error");
     }
   })
   .catch(()=>{});
@@ -1494,7 +1220,5 @@ function initQuickDates() {
   });
 }
 initQuickDates();
-</script>
-
-</body>
+</script> </body>
 </html>

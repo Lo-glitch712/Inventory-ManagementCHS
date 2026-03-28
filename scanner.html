@@ -1,48 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Scanner — CHS VITAL System</title>
-  <link rel="stylesheet" href="style.css">
+<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>QR Scanner — CHS VITAL System</title> <link rel="stylesheet" href="style.css">
 </head>
-<body class="dashboard-body">
-
-<div class="page-header">
-  <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1>
-  <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
-</div>
-
-<div class="navbar">
-  <h1>📷 QR Code Scanner</h1>
-  <div class="navbar-right">
-    <a href="dashboard_admin.html" style="padding:8px 16px;background:var(--primary);color:white;border-radius:8px;font-weight:600;text-decoration:none;font-size:14px;">← Back</a>
-  </div>
-</div>
-
-<div class="scanner-wrapper">
-  <div class="card" style="margin-top:20px;">
-    <h3>📷 Scan Borrower QR Code</h3>
-
-    <div class="hint-box">
-      <strong>How it works:</strong><br>
-      • <strong>First scan (Borrow):</strong> Registers the borrow — stock is deducted<br>
-      • <strong>Second scan (Return):</strong> Registers the return — stock is restored<br><br>
-      <strong>Note:</strong> The system automatically detects whether it is a borrow or return based on current status in the database.
-    </div>
-
-    <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">
-      Position the QR code within the camera frame below.
-    </p>
-
-    <div id="reader" style="width:100%;max-width:500px;margin:0 auto;"></div>
-
-    <!-- Result display -->
-    <div id="result" style="margin-top:20px;"></div>
-  </div>
-</div>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
+<body class="dashboard-body"> <div class="page-header"> <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1> <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
+</div> <div class="navbar"> <h1> QR Code Scanner</h1> <div class="navbar-right"> <a href="dashboard_admin.html" style="padding:8px 16px;background:var(--primary);color:white;border-radius:8px;font-weight:600;text-decoration:none;font-size:14px;">← Back</a> </div>
+</div> <div class="scanner-wrapper"> <div class="card" style="margin-top:20px;"> <h3> Scan Borrower QR Code</h3> <div class="hint-box"> <strong>How it works:</strong><br> • <strong>First scan (Borrow):</strong> Registers the borrow — stock is deducted<br> • <strong>Second scan (Return):</strong> Registers the return — stock is restored<br><br> <strong>Note:</strong> The system automatically detects whether it is a borrow or return based on current status in the database.
+    </div> <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;"> Position the QR code within the camera frame below.
+    </p> <div id="reader" style="width:100%;max-width:500px;margin:0 auto;"></div> <!-- Result display --> <div id="result" style="margin-top:20px;"></div> </div>
+</div> <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="app.js"></script>
 <script>
 let scanner      = null;
@@ -81,7 +46,7 @@ function onScanSuccess(decodedText) {
 }
 
 function checkAndProcess(qrData) {
-  showResult("info", "🔍 Checking status...", qrData);
+  showResult("info", " Checking status...", qrData);
 
   fetch(API, {
     method: "POST",
@@ -114,13 +79,7 @@ function checkAndProcess(qrData) {
 function processBorrow(data) {
   const itemDisplay = data.itemNames || data.items;
   showResult("borrow", `
-    <div class="borrow-header">📤 Processing Borrow...</div>
-    <div class="borrow-info">
-      <p><strong>Borrower:</strong> ${data.studentName}</p>
-      <p><strong>Items:</strong> ${itemDisplay}</p>
-      <p><strong>Return by:</strong> ${new Date(data.returnDate).toLocaleString()}</p>
-    </div>
-  `);
+    <div class="borrow-header"> Processing Borrow...</div> <div class="borrow-info"> <p><strong>Borrower:</strong> ${data.studentName}</p> <p><strong>Items:</strong> ${itemDisplay}</p> <p><strong>Return by:</strong> ${new Date(data.returnDate).toLocaleString()}</p> </div> `);
 
   fetch(API, {
     method: "POST",
@@ -142,16 +101,8 @@ function processBorrow(data) {
   .then(response => {
     if (response.status === "success") {
       showResult("success", `
-        <div class="borrow-header">✅ Borrow Confirmed!</div>
-        <div class="borrow-info">
-          <p><strong>Borrower:</strong> ${data.studentName}</p>
-          <p><strong>Items:</strong> ${itemDisplay}</p>
-          <p><strong>Return by:</strong> ${new Date(data.returnDate).toLocaleString()}</p>
-        </div>
-        <div style="margin-top:12px;padding:12px;background:#d4f3e8;border-radius:8px;color:#1a6e4a;font-weight:600;">
-          ✓ Stock has been deducted
-        </div>
-      `);
+        <div class="borrow-header"> Borrow Confirmed!</div> <div class="borrow-info"> <p><strong>Borrower:</strong> ${data.studentName}</p> <p><strong>Items:</strong> ${itemDisplay}</p> <p><strong>Return by:</strong> ${new Date(data.returnDate).toLocaleString()}</p> </div> <div style="margin-top:12px;padding:12px;background:#d4f3e8;border-radius:8px;color:#1a6e4a;font-weight:600;"> ✓ Stock has been deducted
+        </div> `);
       resetScanner(3500);
     } else {
       showNotification(response.message || "Borrow failed","error");
@@ -171,12 +122,7 @@ function processBorrow(data) {
 function processReturn(data) {
   const itemDisplay = data.itemNames || data.items;
   showResult("return", `
-    <div class="borrow-header">📥 Processing Return...</div>
-    <div class="borrow-info">
-      <p><strong>Borrower:</strong> ${data.studentName}</p>
-      <p><strong>Items:</strong> ${itemDisplay}</p>
-    </div>
-  `);
+    <div class="borrow-header"> Processing Return...</div> <div class="borrow-info"> <p><strong>Borrower:</strong> ${data.studentName}</p> <p><strong>Items:</strong> ${itemDisplay}</p> </div> `);
 
   fetch(API, {
     method: "POST",
@@ -191,15 +137,8 @@ function processReturn(data) {
   .then(response => {
     if (response.status === "success") {
       showResult("success", `
-        <div class="borrow-header">✅ Return Confirmed!</div>
-        <div class="borrow-info">
-          <p><strong>Borrower:</strong> ${data.studentName}</p>
-          <p><strong>Items:</strong> ${itemDisplay}</p>
-        </div>
-        <div style="margin-top:12px;padding:12px;background:#d4f3e8;border-radius:8px;color:#1a6e4a;font-weight:600;">
-          ✓ Stock has been restored
-        </div>
-      `);
+        <div class="borrow-header"> Return Confirmed!</div> <div class="borrow-info"> <p><strong>Borrower:</strong> ${data.studentName}</p> <p><strong>Items:</strong> ${itemDisplay}</p> </div> <div style="margin-top:12px;padding:12px;background:#d4f3e8;border-radius:8px;color:#1a6e4a;font-weight:600;"> ✓ Stock has been restored
+        </div> `);
       resetScanner(3500);
     } else {
       showNotification(response.message || "Return failed","error");
@@ -226,8 +165,7 @@ const borderColors = {
 
 function showResult(type, html) {
   document.getElementById("result").innerHTML = `
-    <div class="borrow-record" style="border-left-color:${borderColors[type]||'var(--primary)'};">
-      ${html}
+    <div class="borrow-record" style="border-left-color:${borderColors[type]||'var(--primary)'};"> ${html}
     </div>`;
 }
 
@@ -291,11 +229,7 @@ async function initScanner() {
       );
     } catch (e2) {
       document.getElementById("reader").innerHTML = `
-        <div class="warning">
-          <strong>Camera Error:</strong> Unable to initialize back camera.<br>
-          • Allow camera permission in browser settings<br>
-          • Use HTTPS or localhost<br>
-          • Ensure no other app is using the camera
+        <div class="warning"> <strong>Camera Error:</strong> Unable to initialize back camera.<br> • Allow camera permission in browser settings<br> • Use HTTPS or localhost<br> • Ensure no other app is using the camera
         </div>`;
     }
   }
@@ -305,7 +239,5 @@ initScanner();
 
 // Auth guard
 if (!localStorage.getItem("userID")) window.location = "login.html";
-</script>
-
-</body>
+</script> </body>
 </html>
