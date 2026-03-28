@@ -1,7 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Register — CHS VITAL System</title> <link rel="stylesheet" href="style.css">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Inventory Management System</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="auth-page"> <div class="auth-header"> <span class="logo-text">CHS PROJECT VITAL</span> <span class="logo-sub">VIRTUAL • INVENTORY • TRACKING • LOGGING</span> </div> <div class="auth-card"> <h2>Create Account</h2> <p class="subtitle">Student borrower registration</p> <div class="hint-box"> Use your school email: <strong>yourname@gbox.ncf.edu.ph</strong> </div> <div class="form-group"> <label for="name">Full Name</label> <input id="name" type="text" placeholder="e.g., Juan dela Cruz" autocomplete="name" required> </div> <div class="form-group"> <label for="idNumber">School ID Number</label> <input id="idNumber" type="text" placeholder="e.g., 2024-00123" required> <small style="color:var(--text-muted);font-size:12px;margin-top:4px;display:block;"> Your school-issued student ID number
-      </small> </div> <div class="form-group"> <label for="department">Department / Course</label> <input id="department" type="text" placeholder="e.g., Nursing, Medicine" required> </div> <div class="form-group"> <label for="year">Year Level</label> <input id="year" type="number" placeholder="e.g., 1, 2, 3, 4" min="1" max="6" required> </div> <div class="form-group"> <label for="contact">Contact Number</label> <input id="contact" type="tel" placeholder="e.g., 09XX-XXX-XXXX" required> </div> <div class="form-group"> <label for="email">School Email</label> <input id="email" type="email" placeholder="yourname@gbox.ncf.edu.ph" autocomplete="email" required> <small style="color:var(--text-muted);font-size:12px;margin-top:4px;display:block;"> Must end with @gbox.ncf.edu.ph
-      </small> </div> <div class="form-group"> <label for="password">Password</label> <input id="password" type="password" placeholder="Minimum 8 characters" minlength="8" autocomplete="new-password" required> </div> <div class="form-group"> <label for="confirmPassword">Confirm Password</label> <input id="confirmPassword" type="password" placeholder="Re-enter your password" minlength="8" autocomplete="new-password" required> </div> <button onclick="register(event)" style="margin-top: 14px;">Create Account</button> <div class="auth-link"> 
+<body>
+
+<!-- Page Header -->
+<div class="page-header">
+  <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1>
+  <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
+</div>
+
+<div class="container">
+  <h2>📝 Register</h2>
+  
+  <div class="form-group">
+    <label for="role">Role</label>
+    <select id="role" onchange="updateYearLevelRequired()" required>
+      <option value="">-- Select Role --</option>
+      <option value="Student">Student</option>
+      <option value="Clinical Instructor">Clinical Instructor</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="name">Full Name</label>
+    <input id="name" type="text" placeholder="Enter your full name" required>
+  </div>
+
+  <div class="form-group">
+    <label for="department">Department</label>
+    <input id="department" type="text" placeholder="e.g., Nursing, Medicine" required>
+  </div>
+
+  <div class="form-group">
+    <label for="year">Year Level <span id="yearRequired" style="color: #dc3545;">*</span></label>
+    <input id="year" type="number" placeholder="e.g., 1, 2, 3, 4" min="1" max="6">
+  </div>
+
+  <div class="form-group">
+    <label for="contact">Contact Number</label>
+    <input id="contact" type="tel" placeholder="Enter your contact number" required>
+  </div>
+
+  <div class="form-group">
+    <label for="email">Email Address</label>
+    <input id="email" type="email" placeholder="Enter your email" required>
+  </div>
+
+  <div class="form-group">
+    <label for="password">Password</label>
+    <input id="password" type="password" placeholder="Minimum 6 characters" minlength="6" required>
+  </div>
+
+  <button onclick="register()">Register</button>
+  
+  <div class="auth-buttons" style="justify-content: center; gap: 10px;">
+    <span style="color: #666;">Already have an account?</span>
+    <a href="login.html" style="padding: 8px 16px; margin-top: 0;">Login here</a>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+function updateYearLevelRequired() {
+  const role = document.getElementById("role").value;
+  const yearInput = document.getElementById("year");
+  const yearRequired = document.getElementById("yearRequired");
+  
+  if (role === "Student") {
+    yearInput.setAttribute("required", "");
+    yearRequired.style.display = "inline";
+  } else if (role === "Clinical Instructor") {
+    yearInput.removeAttribute("required");
+    yearRequired.style.display = "none";
+  }
+}
+
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", updateYearLevelRequired);
+</script>
+</body>
+</html>

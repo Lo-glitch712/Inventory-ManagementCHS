@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - Inventory Management</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <style>
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    .tab-btn {
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.3s ease;
+    }
+    .tab-btn.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .borrowed-item {
+      background: #f8f9fa;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    .borrowed-item-header {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .borrowed-item-info {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .status-borrowed {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .status-pending {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+    .qr-display {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #e0e0e0;
+    }
+    .qr-display small {
+      display: block;
+      color: #999;
+      margin-top: 10px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Page Header -->
+<div class="page-header">
+  <h1 class="header-title">CHS PROJECT VITAL SYSTEM</h1>
+  <p class="header-subtitle">VIRTUAL • INVENTORY • TRACKING • LOGGING</p>
+</div>
+
+<div class="navbar">
+  <h1>📚 Student Dashboard</h1>
+  <div class="navbar-right">
+    <span>Welcome, <strong id="userName"></strong></span>
+    <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+  </div>
+</div>
+
+<!-- Hamburger Menu -->
+<div id="sideMenu" class="side-menu">
+  <button class="close-btn" onclick="toggleMenu()">✕</button>
+  <div class="menu-content">
+    <button onclick="openProfile()" class="menu-btn">👤 My Profile</button>
+    <button onclick="changePassword()" class="menu-btn">🔐 Change Password</button>
+    <hr style="margin: 10px 0; border: none; border-top: 1px solid #e0e0e0;">
+    <button onclick="logout()" class="menu-btn" style="color: #dc3545;">🚪 Logout</button>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div id="profileModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>👤 My Profile</h3>
+      <button class="close-btn" onclick="closeProfile()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="profileName" readonly>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="profileEmail">
+      </div>
+      <div class="form-group">
+        <label>Contact</label>
+        <input type="tel" id="profileContact">
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <input type="text" id="profileDepartment">
+      </div>
+      <div class="form-group">
+        <label>Year Level</label>
+        <input type="number" id="profileYear">
+      </div>
+      <button onclick="saveProfile()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Password Change Modal -->
+<div id="passwordModal" class="modal">
+  <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-header">
+      <h3>🔐 Change Password</h3>
+      <button class="close-btn" onclick="closePassword()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Current Password</label>
+        <input type="password" id="currentPassword" placeholder="Enter current password">
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" id="newPassword" placeholder="Enter new password (min 6 chars)" minlength="6">
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="confirmPassword" placeholder="Confirm new password" minlength="6">
+      </div>
+      <button onclick="updatePassword()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">✓ Update Password</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('borrow-tab')">📦 Borrow Items</button>
+    <button class="tab-btn" onclick="switchTab('borrowed-tab')">🔄 My Borrowed Items</button>
+    <button class="tab-btn" onclick="switchTab('history-tab')">📋 History</button>
+  </div>
+
+  <!-- TAB 1: Borrow Items -->
+  <div id="borrow-tab" class="tab-content active">
+    <h3>📦 Select Items to Borrow</h3>
+    
+    <div class="form-group">
+      <label for="searchItems">🔍 Search Items</label>
+      <input id="searchItems" type="text" placeholder="Search by item name or code..." oninput="filterItems()">
+    </div>
+    
+    <div id="itemsList" class="items-list"></div>
+
+    <div class="form-group">
+      <label for="returnDate">Expected Return Date & Time</label>
+      <input type="datetime-local" id="returnDate" required>
+    </div>
+    
+    <button onclick="generateQR()">Generate QR Code</button>
+
+    <div class="qr-container" id="qrContainer" style="display:none;">
+      <h4>Your QR Code</h4>
+      <canvas id="qrcode"></canvas>
+      <p style="color: #666; margin-top: 10px;">📱 Take this QR code to the counter and let the instructor scan it to confirm your borrow</p>
+      <button onclick="saveQRCode()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); margin-top: 15px;">💾 Save QR Code</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: My Borrowed Items -->
+  <div id="borrowed-tab" class="tab-content">
+    <h3>🔄 Currently Borrowed Items</h3>
+    <div id="borrowedItemsList"></div>
+  </div>
+
+  <!-- Return Item Modal -->
+  <div id="returnModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>📥 Return Item</h3>
+        <button class="close-btn" onclick="closeReturnModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p><strong id="returnItemName"></strong></p>
+        <p style="color: #666; margin-bottom: 20px;">Scan this QR code at the counter to process the return</p>
+        <div style="text-align: center;">
+          <canvas id="returnQRcode"></canvas>
+        </div>
+        <p style="color: #999; font-size: 12px; margin-top: 15px; text-align: center;">This QR code contains your return information</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: History -->
+  <div id="history-tab" class="tab-content">
+    <h3>📋 Borrow History</h3>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script src="app.js"></script>
+<script>
+let selectedItems = [];
+
+// Hamburger Menu Functions
+function toggleMenu(){
+  const menu = document.getElementById("sideMenu");
+  menu.classList.toggle("active");
+}
+
+function closeMenu(){
+  const menu = document.getElementById("sideMenu");
+  menu.classList.remove("active");
+}
+
+// Close menu when clicking outside
+document.addEventListener("click", function(event) {
+  const menu = document.getElementById("sideMenu");
+  const menuToggle = document.querySelector(".menu-toggle");
+  const isClickOnMenu = menu && menu.contains(event.target);
+  const isClickOnToggle = menuToggle && (event.target === menuToggle || menuToggle.contains(event.target));
+  
+  if(!isClickOnMenu && !isClickOnToggle && menu.classList.contains("active")) {
+    menu.classList.remove("active");
+  }
+});
+
+// Profile Functions
+function openProfile(){
+  closeMenu();
+  const profileModal = document.getElementById("profileModal");
+  const userID = localStorage.getItem("userID");
+  
+  if(!profileModal) {
+    console.error("Profile modal not found in DOM");
+    showNotification("Error: Profile modal not found", "error");
+    return;
+  }
+  
+  // Show modal first
+  profileModal.style.display = "flex";
+  
+  // Then fetch data
+  fetch(API, {
+    method:"POST",
+    body:new URLSearchParams({
+      action:"getUserProfile",
+      userID:userID
+    })
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.status === "success"){
+      document.getElementById("profileName").value = data.name || "";
+      document.getElementById("profileEmail").value = data.email || "";
+      document.getElementById("profileContact").value = data.contact || "";
+      document.getElementById("profileDepartment").value = data.department || "";
+      document.getElementById("profileYear").value = data.year || "";
+    } else {
+      console.error("Profile error:", data);
+      showNotification("Could not load profile data", "info");
+    }
+  })
+  .catch(error => {
+    console.error("Error loading profile:", error);
+    showNotification("Error loading profile", "error");
+  });
+}
+
+function closeProfile(){
+  document.getElementById("profileModal").style.display = "none";
+}
+
+function saveProfile(){
+  const userID = localStorage.getItem("userID");
+  
+  fetch(API, {
+    method:"POST",
+    body:new URLSearchParams({
+      action:"updateUserProfile",
+      userID:userID,
+      email:document.getElementById("profileEmail").value,
+      contact:document.getElementById("profileContact").value,
+      department:document.getElementById("profileDepartment").value,
+      year:document.getElementById("profileYear").value
+    })
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.status === "success"){
+      showNotification("✓ Profile updated successfully!", "success");
+      closeProfile();
+    } else {
+      showNotification("Error updating profile", "error");
+    }
+  })
+  .catch(error => {
+    console.error("Error:", error);
+    showNotification("Failed to update profile", "error");
+  });
+}
+
+// Password Change Functions
+function changePassword(){
+  closeMenu();
+  document.getElementById("passwordModal").style.display = "flex";
+}
+
+function closePassword(){
+  document.getElementById("passwordModal").style.display = "none";
+  document.getElementById("currentPassword").value = "";
+  document.getElementById("newPassword").value = "";
+  document.getElementById("confirmPassword").value = "";
+}
+
+function updatePassword(){
+  const newPassword = document.getElementById("newPassword").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  
+  if(newPassword !== confirmPassword){
+    showNotification("Passwords do not match", "error");
+    return;
+  }
+  
+  if(newPassword.length < 6){
+    showNotification("Password must be at least 6 characters", "error");
+    return;
+  }
+  
+  const userID = localStorage.getItem("userID");
+  
+  fetch(API, {
+    method:"POST",
+    body:new URLSearchParams({
+      action:"changePassword",
+      userID:userID,
+      currentPassword:document.getElementById("currentPassword").value,
+      newPassword:newPassword
+    })
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.status === "success"){
+      showNotification("✓ Password changed successfully!", "success");
+      closePassword();
+    } else {
+      showNotification(data.message || "Failed to change password", "error");
+    }
+  })
+  .catch(error => {
+    console.error("Error:", error);
+    showNotification("Error changing password", "error");
+  });
+}
+
+// Return Item Modal Functions
+function closeReturnModal(){
+  document.getElementById("returnModal").style.display = "none";
+}
+
+function showReturnQR(itemName, qrData){
+  // Show modal - use flex to center properly
+  const modal = document.getElementById("returnModal");
+  modal.style.display = "flex";
+  
+  // Set item name
+  document.getElementById("returnItemName").textContent = itemName;
+  
+  // Get canvas and clear it properly
+  const canvasContainer = document.getElementById("returnQRcode").parentElement;
+  const oldCanvas = document.getElementById("returnQRcode");
+  oldCanvas.remove();
+  
+  // Create new canvas element
+  const newCanvas = document.createElement('canvas');
+  newCanvas.id = "returnQRcode";
+  canvasContainer.appendChild(newCanvas);
+  
+  // Delay QR generation slightly to ensure canvas is ready
+  setTimeout(() => {
+    try {
+      console.log("Generating return QR code with data:", qrData);
+      new QRCode(newCanvas, {
+        text: qrData,
+        width: 250,
+        height: 250,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      console.log("QR code generated successfully");
+    } catch(e) {
+      console.error("Error generating QR code:", e);
+      showNotification("Error generating QR code", "error");
+    }
+  }, 50);
+}
+
+// Check authentication
+function checkAuth() {
+  if (!localStorage.getItem("userID")) {
+    window.location = "login.html";
+  } else {
+    document.getElementById("userName").textContent = localStorage.getItem("userName") || "User";
+  }
+  
+  // Add modal close handlers
+  document.getElementById("profileModal").onclick = function(e) {
+    if(e.target === this) this.style.display = "none";
+  };
+  document.getElementById("passwordModal").onclick = function(e) {
+    if(e.target === this) this.style.display = "none";
+  };
+  document.getElementById("returnModal").onclick = function(e) {
+    if(e.target === this) this.style.display = "none";
+  };
+}
+
+function switchTab(tabName) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  document.getElementById(tabName).classList.add('active');
+  event.target.classList.add('active');
+  
+  // Load data when switching to different tabs
+  if(tabName === 'borrow-tab') {
+    // Clear search when switching to borrow tab
+    const searchInput = document.getElementById("searchItems");
+    if(searchInput) {
+      searchInput.value = "";
+      filterItems();
+    }
+  }
+  if(tabName === 'borrowed-tab') {
+    loadBorrowedItems();
+  }
+  if(tabName === 'history-tab') {
+    loadBorrowHistory();
+  }
+}
+
+function loadItems(){
+  fetch(API,{
+    method:"POST",
+    body:new URLSearchParams({action:"getItems"})
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    let container = document.getElementById("itemsList");
+    container.innerHTML="";
+
+    if (!data || data.length <= 1) {
+      container.innerHTML = "<p style='text-align:center; color:#999;'>No items available</p>";
+      return;
+    }
+
+    // Skip header row (index 0)
+    for(let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const itemId = row[0];
+      const itemName = row[1];
+      const stock = row[4];
+      
+      container.innerHTML += `
+        <label class="item-label">
+          <input type="checkbox" class="item-checkbox" value="${itemId}" data-name="${itemName}" onchange="selectItem(this)">
+          <span>${itemName} (Stock: ${stock})</span>
+        </label>
+      `;
+    }
+  })
+  .catch(error => {
+    console.error("Error loading items:", error);
+    showNotification("Failed to load items", "error");
+  });
+}
+
+function selectItem(el){
+  if(el.checked){
+    selectedItems.push({id: el.value, name: el.dataset.name});
+  }else{
+    selectedItems = selectedItems.filter(i=>i.id!==el.value);
+  }
+}
+
+function filterItems(){
+  const searchText = document.getElementById("searchItems").value.toLowerCase();
+  const itemLabels = document.querySelectorAll(".item-label");
+  let visibleCount = 0;
+  
+  itemLabels.forEach(label => {
+    const itemName = label.textContent.toLowerCase();
+    if(itemName.includes(searchText)){
+      label.style.display = "flex";
+      visibleCount++;
+    } else {
+      label.style.display = "none";
+    }
+  });
+  
+  // Show message if no items match
+  if(visibleCount === 0 && searchText.length > 0){
+    // You could add a "no results" message here if needed
+  }
+}
+
+function generateQR(){
+  if (selectedItems.length === 0) {
+    showNotification("Please select at least one item", "error");
+    return;
+  }
+  
+  if (!document.getElementById("returnDate").value) {
+    showNotification("Please select a return date and time", "error");
+    return;
+  }
+  
+  const data = JSON.stringify({
+    student: localStorage.getItem("userID"),
+    studentName: localStorage.getItem("userName"),
+    items: selectedItems.map(i => i.id).join(","),
+    itemNames: selectedItems.map(i => i.name).join(", "),
+    returnDate: document.getElementById("returnDate").value,
+    borrowDate: new Date().toISOString()
+  });
+
+  QRCode.toCanvas(document.getElementById("qrcode"), data, {
+    width: 300,
+    margin: 10,
+    color: {
+      dark: '#000000',
+      light: '#FFFFFF'
+    }
+  });
+
+  document.getElementById("qrContainer").style.display = "block";
+  
+  showNotification("✓ QR Code generated! Take it to the counter to scan and process your borrow.", "success");
+}
+
+function loadBorrowedItems(){
+  fetch(API,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"getBorrowedItems",
+      student:localStorage.getItem("userID")
+    })
+  })
+  .then(res=>{
+    if(!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return res.json();
+  })
+  .then(data=>{
+    let container = document.getElementById("borrowedItemsList");
+    container.innerHTML = "";
+
+    if (!data || data.length === 0 || data.error) {
+      container.innerHTML = "<div class='empty-state'>📭 You don't have any borrowed items</div>";
+      return;
+    }
+
+    let foundBorrowed = false;
+    data.forEach((record, idx) => {
+      // Handle both old format (6 cols) and new format (7 cols)
+      const status = record.length >= 7 ? record[6] : record[5];
+      const items = record.length >= 7 ? record[3] : record[2];
+      const returnDateVal = record.length >= 7 ? record[5] : record[4];
+      
+      if(status === "Borrowed") {
+        foundBorrowed = true;
+        const returnDate = new Date(returnDateVal);
+        const now = new Date();
+        const isOverdue = returnDate < now;
+
+        // Generate QR data for this borrow record
+        const qrData = JSON.stringify({
+          student: record.length >= 7 ? record[1] : record[1],
+          studentName: record.length >= 7 ? record[2] : localStorage.getItem("userName"),
+          items: items,
+          returnDate: returnDateVal,
+          action: "return"
+        });
+
+        container.innerHTML += `
+          <div class="borrowed-item">
+            <div class="borrowed-item-header">${items}</div>
+            <div class="borrowed-item-info">
+              <p><strong>Expected Return:</strong> ${returnDate.toLocaleString()}</p>
+              <p><strong>Status:</strong> <span class="status-badge status-borrowed">Borrowed</span></p>
+              ${isOverdue ? '<p style="color: #dc3545;"><strong>⚠️ OVERDUE</strong></p>' : ''}
+            </div>
+            <button onclick='showReturnQR("${items}", "${qrData.replace(/"/g, '&quot;')}");' style="background: #10b981; color: white; padding: 10px 16px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: 600; transition: all 0.3s ease;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">📥 Return Item</button>
+          </div>
+        `;
+      }
+    });
+
+    if(!foundBorrowed) {
+      container.innerHTML = "<div class='empty-state'>📭 You don't have any borrowed items</div>";
+    }
+  })
+  .catch(error => {
+    console.error("Error loading borrowed items:", error);
+    document.getElementById("borrowedItemsList").innerHTML = "<div class='empty-state' style='color: #dc3545;'>❌ Error loading borrowed items</div>";
+    showNotification("Failed to load borrowed items", "error");
+  });
+}
+
+function loadBorrowHistory(){
+  fetch(API,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"getBorrowHistory",
+      student:localStorage.getItem("userID")
+    })
+  })
+  .then(res=>{
+    if(!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return res.json();
+  })
+  .then(data=>{
+    let container = document.getElementById("historyList");
+    container.innerHTML = "";
+
+    if (!data || data.length === 0 || data.error) {
+      container.innerHTML = "<div class='empty-state'>📭 No history yet</div>";
+      return;
+    }
+
+    data.forEach(record => {
+      // Handle both old format (6 cols) and new format (7 cols)
+      const status = record.length >= 7 ? record[6] : record[5];
+      const items = record.length >= 7 ? record[3] : record[2];
+      const borrowDateVal = record.length >= 7 ? record[4] : record[3];
+      const returnDateVal = record.length >= 7 ? record[5] : record[4];
+      
+      const statusBadge = status === "Returned" ? 
+        '<span class="status-badge" style="background: #d4edda; color: #155724;">✓ Returned</span>' : 
+        '<span class="status-badge status-borrowed">Borrowed</span>';
+
+      container.innerHTML += `
+        <div class="borrowed-item">
+          <div class="borrowed-item-header">${items}</div>
+          <div class="borrowed-item-info">
+            <p><strong>Borrowed:</strong> ${new Date(borrowDateVal).toLocaleString()}</p>
+            <p><strong>Return Date:</strong> ${new Date(returnDateVal).toLocaleString()}</p>
+            <p><strong>Status:</strong> ${statusBadge}</p>
+          </div>
+        </div>
+      `;
+    });
+
+    if(container.innerHTML === "") {
+      container.innerHTML = "<div class='empty-state'>📭 No history yet</div>";
+    }
+  })
+  .catch(error => {
+    console.error("Error loading history:", error);
+    document.getElementById("historyList").innerHTML = "<div class='empty-state' style='color: #dc3545;'>❌ Error loading history</div>";
+    showNotification("Failed to load history", "error");
+  });
+}
+
+function checkOverdueItems(){
+  fetch(API,{
+    method:"POST",
+    body:new URLSearchParams({
+      action:"getOverdueItems",
+      student:localStorage.getItem("userID")
+    })
+  })
+  .then(res=>{
+    if(!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return res.json();
+  })
+  .then(data=>{
+    if(data && data.hasOverdue && data.overdueCount > 0){
+      // Show notification in UI - this is the main notification users should see
+      const overdueList = data.items.map(item => `${item.itemName} (${item.daysOverdue} days overdue)`).join(", ");
+      const message = `⚠️ You have ${data.overdueCount} overdue item(s): ${overdueList}`;
+      console.log("Showing overdue notification:", message);
+      showNotification(message, "error");
+      
+      // Send browser notification if permission is granted
+      if("Notification" in window && Notification.permission === "granted"){
+        try {
+          new Notification("📌 Inventory Management", {
+            body: `You have ${data.overdueCount} overdue item(s) that need to be returned!`,
+            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>📦</text></svg>",
+            tag: "overdue-items",
+            requireInteraction: true
+          });
+        } catch(e) {
+          console.error("Failed to send browser notification:", e);
+        }
+      }
+    }
+  })
+  .catch(error => {
+    console.error("Error checking overdue items:", error);
+  });
+}
+
+function requestNotificationPermission(){
+  if("Notification" in window && Notification.permission === "default"){
+    Notification.requestPermission().then(permission => {
+      if(permission === "granted"){
+        showNotification("✓ Notifications enabled! You'll get alerts for overdue items.", "success");
+        checkOverdueItems();
+      }
+    });
+  }
+}
+
+checkAuth();
+loadItems();
+// Request notification permission
+requestNotificationPermission();
+// Check for overdue items on page load
+checkOverdueItems();
+// Check again every 5 minutes
+setInterval(checkOverdueItems, 5 * 60 * 1000);
+</script>
+
+</body>
+</html>
