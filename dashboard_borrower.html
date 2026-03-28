@@ -134,21 +134,97 @@
     }
     .return-modal-items p { font-size:11px; text-transform:uppercase; letter-spacing:0.6px; font-weight:700; color:var(--text-muted); margin-bottom:8px; }
 
-    /* ── Pagination ── */
-    .pagination { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:18px; flex-wrap:wrap; }
-    .pg-btn { padding:7px 14px; font-size:13px; font-weight:600; border:1.5px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text-muted); cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif; width:auto; margin:0; }
-    .pg-btn:hover:not(:disabled) { border-color:var(--primary); color:var(--primary); transform:none; box-shadow:none; }
-    .pg-btn.active { background:var(--primary); color:white; border-color:var(--primary); }
-    .pg-btn:disabled { opacity:0.4; cursor:not-allowed; }
-    .pg-info { font-size:13px; color:var(--text-muted); font-weight:500; }
+    /* ── Arrow Tab Navigation ─────────────────────────── */
+    .tab-nav {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 6px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .tab-arrow {
+      flex: 0 0 48px;
+      height: 52px;
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 0;
+      border-radius: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+    }
+    .tab-arrow:hover:not(:disabled) {
+      background: var(--surface-alt);
+      transform: none;
+      box-shadow: none;
+    }
+    .tab-arrow:disabled { opacity: 0.25; cursor: not-allowed; }
+    .tab-indicator-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 8px 8px;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+    .tab-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      font-family: 'DM Sans', sans-serif;
+    }
+    .tab-dots {
+      display: flex;
+      gap: 6px;
+      margin-top: 5px;
+    }
+    .tab-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.25s;
+    }
+    .tab-dot.active {
+      background: var(--primary);
+      transform: scale(1.25);
+    }
 
-    /* ── Scrollable tabs ── */
-    .tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-    .tabs::-webkit-scrollbar { display:none; }
-    .tab-btn { flex:0 0 auto; white-space:nowrap; }
-
-    /* ── Color swatch active ── */
-    .color-swatch.active { outline:3px solid var(--primary); outline-offset:2px; }
+    /* ── Items pagination ─────────────────────────────── */
+    .items-page-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      gap: 8px;
+    }
+    .items-page-btn {
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--primary);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+      width: auto;
+      margin: 0;
+    }
+    .items-page-btn:hover:not(:disabled) { background: var(--primary); color: white; border-color: var(--primary); transform: none; box-shadow: none; }
+    .items-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .items-page-info { font-size: 12px; color: var(--text-muted); font-weight: 500; text-align: center; flex: 1; }
   </style>
 </head>
 <body class="dashboard-body">
@@ -238,10 +314,14 @@
 </div>
 
 <div class="dashboard-main">
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('borrow-tab',this)">📦 Borrow Items</button>
-    <button class="tab-btn" onclick="switchTab('borrowed-tab',this)">🔄 My Borrows</button>
-    <button class="tab-btn" onclick="switchTab('history-tab',this)">📋 History</button>
+  <!-- Arrow tab navigation -->
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-arrow" id="tabPrev" onclick="navTab(-1)" disabled>&#8592;</button>
+    <div class="tab-indicator-wrap">
+      <div class="tab-label" id="tabLabel">📦 Borrow Items</div>
+      <div class="tab-dots" id="tabDots"></div>
+    </div>
+    <button class="tab-arrow" id="tabNext" onclick="navTab(1)">&#8594;</button>
   </div>
 
   <!-- TAB: Borrow -->
@@ -283,12 +363,7 @@
         <input type="hidden" id="borrowProcedure" value="">
 
         <!-- Procedure Cards Grid -->
-        <div id="procedureCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:10px;"></div>
-
-        <!-- Add Custom Procedure -->
-        <div style="margin-bottom:14px;">
-          <button onclick="openAddProcedureModal()" style="width:auto;padding:7px 16px;font-size:13px;background:transparent;color:var(--primary);border:1.5px dashed var(--primary);border-radius:8px;font-weight:600;margin:0;">＋ Add Custom Procedure</button>
-        </div>
+        <div id="procedureCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:14px;"></div>
 
         <!-- Selected Procedure display (shown after selection) -->
         <div id="selectedProcedureDisplay" style="display:none;background:#f0faf6;border:1.5px solid var(--success);border-radius:8px;padding:10px 14px;margin-bottom:14px;align-items:center;gap:10px;">
@@ -340,7 +415,12 @@
           style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s;"
           onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
       </div>
-      <div id="itemsList" class="items-list"></div>
+      <div id="itemsList"></div>
+      <div class="items-page-nav" id="itemsPageNav" style="display:none;">
+        <button class="items-page-btn" id="itemsPrev" onclick="itemsPageNav(-1)">← Prev</button>
+        <span class="items-page-info" id="itemsPageInfo"></span>
+        <button class="items-page-btn" id="itemsNext" onclick="itemsPageNav(1)">Next →</button>
+      </div>
 
       <!-- Return Date -->
       <div class="form-group" style="margin-top:20px;">
@@ -390,7 +470,6 @@
     <div class="card">
       <h3>🔄 Currently Borrowed</h3>
       <div id="borrowedItemsList"></div>
-      <div class="pagination" id="borrowedPagination"></div>
     </div>
   </div>
 
@@ -399,44 +478,6 @@
     <div class="card">
       <h3>📋 Borrow History</h3>
       <div id="historyList"></div>
-      <div class="pagination" id="historyPagination"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Add Custom Procedure Modal -->
-<div id="addProcedureModal" class="modal" style="justify-content:center;align-items:center;padding:20px;">
-  <div class="modal-content" style="max-width:420px;">
-    <div class="modal-header">
-      <h3>＋ Add Custom Procedure</h3>
-      <button class="close-btn" onclick="closeAddProcedureModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="hint-box" style="margin-bottom:16px;">
-        Add a procedure that's not in the default list. It will be saved and available for future borrows.
-      </div>
-      <div class="form-group">
-        <label>Procedure Name <span style="color:var(--danger);">*</span></label>
-        <input type="text" id="newProcName" placeholder="e.g., Nasopharyngeal Suctioning">
-      </div>
-      <div class="form-group">
-        <label>Icon (emoji)</label>
-        <input type="text" id="newProcIcon" placeholder="e.g., 🧹" style="max-width:80px;" maxlength="4">
-      </div>
-      <div class="form-group">
-        <label>Background Color</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;" id="colorPicker">
-          <span class="color-swatch active" data-color="#e8f4ff" data-border="#90c8f0" style="background:#e8f4ff;border:2px solid #90c8f0;border-radius:50%;width:28px;height:28px;cursor:pointer;display:inline-block;" onclick="selectColor(this)"></span>
-          <span class="color-swatch" data-color="#fff4e8" data-border="#f0b87a" style="background:#fff4e8;border:2px solid #ccc;border-radius:50%;width:28px;height:28px;cursor:pointer;display:inline-block;" onclick="selectColor(this)"></span>
-          <span class="color-swatch" data-color="#f4e8ff" data-border="#c890f0" style="background:#f4e8ff;border:2px solid #ccc;border-radius:50%;width:28px;height:28px;cursor:pointer;display:inline-block;" onclick="selectColor(this)"></span>
-          <span class="color-swatch" data-color="#e8fff4" data-border="#70d4a0" style="background:#e8fff4;border:2px solid #ccc;border-radius:50%;width:28px;height:28px;cursor:pointer;display:inline-block;" onclick="selectColor(this)"></span>
-          <span class="color-swatch" data-color="#fff8e8" data-border="#f0d070" style="background:#fff8e8;border:2px solid #ccc;border-radius:50%;width:28px;height:28px;cursor:pointer;display:inline-block;" onclick="selectColor(this)"></span>
-          <span class="color-swatch" data-color="#f0fff0" data-border="#70d070" style="background:#f0fff0;border:2px solid #ccc;border-radius:50%;width:28px;height:28px;cursor:pointer;display:inline-block;" onclick="selectColor(this)"></span>
-          <span class="color-swatch" data-color="#fff0f4" data-border="#f090b0" style="background:#fff0f4;border:2px solid #ccc;border-radius:50%;width:28px;height:28px;cursor:pointer;display:inline-block;" onclick="selectColor(this)"></span>
-        </div>
-      </div>
-      <div id="customProcList" style="margin-top:14px;"></div>
-      <button onclick="saveCustomProcedure()" style="margin-top:10px;">💾 Add Procedure</button>
     </div>
   </div>
 </div>
@@ -461,7 +502,7 @@ function checkAuth() {
   document.getElementById("userName").textContent     = getUserName();
   document.getElementById("sideUserName").textContent = getUserName();
 
-  ["profileModal","passwordModal","returnModal","addProcedureModal"].forEach(mid => {
+  ["profileModal","passwordModal","returnModal"].forEach(mid => {
     const el = document.getElementById(mid);
     if (el) el.addEventListener("click", e => { if (e.target === el) el.style.display = "none"; });
   });
@@ -477,14 +518,56 @@ document.addEventListener("click", e => {
 });
 
 // ── Tabs ──────────────────────────────────────────────────
-function switchTab(tabName, btn) {
+// ── Arrow Tab Navigation ─────────────────────────────────
+const TAB_DEFS = [
+  { id: 'borrow-tab',   label: '📦 Borrow Items' },
+  { id: 'borrowed-tab', label: '🔄 My Borrows' },
+  { id: 'history-tab',  label: '📋 History' }
+];
+let _currentTabIdx = 0;
+
+function initTabNav() {
+  const dots = document.getElementById('tabDots');
+  dots.innerHTML = '';
+  TAB_DEFS.forEach((t, i) => {
+    const d = document.createElement('span');
+    d.className = 'tab-dot' + (i === 0 ? ' active' : '');
+    d.id = 'dot_' + i;
+    d.onclick = () => goToTab(i);
+    d.style.cursor = 'pointer';
+    dots.appendChild(d);
+  });
+  updateTabNav();
+}
+
+function navTab(dir) {
+  goToTab(_currentTabIdx + dir);
+}
+
+function goToTab(idx) {
+  _currentTabIdx = Math.max(0, Math.min(TAB_DEFS.length - 1, idx));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(tabName).classList.add('active');
-  btn.classList.add('active');
-  if (tabName === 'borrowed-tab') loadBorrowedItems();
-  if (tabName === 'history-tab')  loadBorrowHistory();
-  if (tabName === 'borrow-tab')   filterItems();
+  document.getElementById(TAB_DEFS[_currentTabIdx].id).classList.add('active');
+  updateTabNav();
+  const tabId = TAB_DEFS[_currentTabIdx].id;
+  if (tabId === 'borrowed-tab') loadBorrowedItems();
+  if (tabId === 'history-tab')  loadBorrowHistory();
+  if (tabId === 'borrow-tab')   filterItems();
+}
+
+function updateTabNav() {
+  document.getElementById('tabLabel').textContent = TAB_DEFS[_currentTabIdx].label;
+  document.getElementById('tabPrev').disabled = _currentTabIdx === 0;
+  document.getElementById('tabNext').disabled = _currentTabIdx === TAB_DEFS.length - 1;
+  TAB_DEFS.forEach((_, i) => {
+    const d = document.getElementById('dot_' + i);
+    if (d) d.className = 'tab-dot' + (i === _currentTabIdx ? ' active' : '');
+  });
+}
+
+function switchTab(tabName, btn) {
+  const idx = TAB_DEFS.findIndex(t => t.id === tabName);
+  if (idx >= 0) goToTab(idx);
 }
 
 // ── Profile ───────────────────────────────────────────────
@@ -557,24 +640,28 @@ function updatePassword() {
   .catch(()=>showNotification("Error changing password","error"));
 }
 
-// ── Load Items ────────────────────────────────────────────
+// ── Load Items (paginated) ───────────────────────────────
+let _allItemRows = [];   // all inventory rows from server
+let _filteredItems = []; // after search/shelf filter
+let _itemPage = 1;
+const ITEMS_PER_PAGE = 8;
+
 function loadItems() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getItems" }) })
   .then(r=>r.json())
   .then(data => {
-    const container = document.getElementById("itemsList");
-    container.innerHTML = "";
     itemNameMap     = {};
     itemTypeMap     = {};
     itemLocationMap = {};
     selectedItems   = [];
+    _allItemRows    = [];
 
     if (!data || data.length <= 1) {
-      container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items available</div>";
+      document.getElementById("itemsList").innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items available</div>";
+      document.getElementById("itemsPageNav").style.display = "none";
       return;
     }
 
-    // Populate shelf/location filter dropdown
     populateShelfFilter(data);
 
     for (let i = 1; i < data.length; i++) {
@@ -585,60 +672,94 @@ function loadItems() {
       const stock  = parseInt(row[4]) || 0;
       const type   = row[5] || "";
       const loc    = row[6] || "";
-      const avail  = stock > 0;
-
-      const displayName = size ? `${name} (${size})` : name;
-      itemNameMap[itemId]     = displayName;
+      itemNameMap[itemId]     = size ? `${name} (${size})` : name;
       itemTypeMap[itemId]     = type;
       itemLocationMap[itemId] = loc;
-
-      const typePill = type === "Consumable"
-        ? `<span style="font-size:11px;background:#e8f0ff;color:#2d4fa0;padding:2px 8px;border-radius:10px;font-weight:600;">Consumable</span>`
-        : `<span style="font-size:11px;background:#f0faf6;color:#1a5a3e;padding:2px 8px;border-radius:10px;font-weight:600;">Non-Consumable</span>`;
-
-      const locPill = loc
-        ? `<span style="font-size:11px;background:#f5f0e8;color:#7a5c1e;padding:2px 8px;border-radius:10px;font-weight:600;">📚 ${loc}</span>`
-        : '';
-
-      container.innerHTML += `
-        <div class="tap-item ${!avail?'tap-item-disabled':''}" id="ti_${itemId}"
-          onclick="${avail?`tapItem('${itemId}')`:''}">
-          <div style="flex:1;">
-            <div style="font-weight:600;font-size:14px;color:var(--primary);">${name}${size?` <em style="color:var(--text-muted);font-weight:400;font-size:13px;">— ${size}</em>`:''}</div>
-            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
-              ${typePill}
-              ${locPill}
-              <span style="font-size:12px;font-weight:600;color:${avail?'var(--success)':'var(--danger)'};">
-                ${avail?`Stock: ${stock}`:'Out of stock'}
-              </span>
-            </div>
-          </div>
-          <div class="tap-qty-box" id="qty_${itemId}" style="display:none;">
-            <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',-1)">−</button>
-            <span class="qty-num" id="qtynum_${itemId}">1</span>
-            <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',1,'${stock}')">+</button>
-          </div>
-          <div class="tap-check" id="chk_${itemId}" style="display:none;">✓</div>
-        </div>`;
+      _allItemRows.push({ itemId, name, size, stock, type, loc, avail: stock > 0 });
     }
+
+    _filteredItems = [..._allItemRows];
+    _itemPage = 1;
+    renderItemsPage();
   })
   .catch(()=>showNotification("Failed to load items","error"));
 }
 
+function renderItemsPage() {
+  const container = document.getElementById("itemsList");
+  const nav       = document.getElementById("itemsPageNav");
+  const total     = _filteredItems.length;
+
+  if (total === 0) {
+    container.innerHTML = "<div class='empty-state'><div class='icon'>🔍</div>No matching items</div>";
+    nav.style.display = "none"; return;
+  }
+
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+  _itemPage = Math.min(_itemPage, totalPages);
+  const start = (_itemPage - 1) * ITEMS_PER_PAGE;
+  const end   = Math.min(start + ITEMS_PER_PAGE, total);
+  const pageRows = _filteredItems.slice(start, end);
+
+  container.innerHTML = "";
+  pageRows.forEach(({ itemId, name, size, stock, type, loc, avail }) => {
+    const typePill = type === "Consumable"
+      ? `<span style="font-size:11px;background:#e8f0ff;color:#2d4fa0;padding:2px 8px;border-radius:10px;font-weight:600;">Consumable</span>`
+      : `<span style="font-size:11px;background:#f0faf6;color:#1a5a3e;padding:2px 8px;border-radius:10px;font-weight:600;">Non-Consumable</span>`;
+    const locPill = loc
+      ? `<span style="font-size:11px;background:#f5f0e8;color:#7a5c1e;padding:2px 8px;border-radius:10px;font-weight:600;">📚 ${loc}</span>`
+      : "";
+    const isSelected = selectedItems.find(i => i.id === itemId);
+    const el = document.createElement("div");
+    el.className = "tap-item" + (!avail ? " tap-item-disabled" : "") + (isSelected ? " tap-item-selected" : "");
+    el.id = `ti_${itemId}`;
+    if (avail) el.onclick = () => tapItem(itemId);
+    el.innerHTML = `
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:14px;color:var(--primary);">${name}${size ? ` <em style="color:var(--text-muted);font-weight:400;font-size:13px;">— ${size}</em>` : ""}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+          ${typePill}${locPill}
+          <span style="font-size:12px;font-weight:600;color:${avail ? "var(--success)" : "var(--danger)"};">${avail ? `Stock: ${stock}` : "Out of stock"}</span>
+        </div>
+      </div>
+      <div class="tap-qty-box" id="qty_${itemId}" style="display:${isSelected ? "flex" : "none"};">
+        <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',-1)">−</button>
+        <span class="qty-num" id="qtynum_${itemId}">${isSelected ? isSelected.qty : 1}</span>
+        <button class="qty-btn" onclick="event.stopPropagation();changeQty('${itemId}',1,'${stock}')">+</button>
+      </div>
+      <div class="tap-check" id="chk_${itemId}" style="display:${isSelected ? "flex" : "none"};">✓</div>`;
+    container.appendChild(el);
+  });
+
+  // Update pagination nav
+  nav.style.display = totalPages > 1 ? "flex" : "none";
+  document.getElementById("itemsPrev").disabled = _itemPage === 1;
+  document.getElementById("itemsNext").disabled = _itemPage === totalPages;
+  document.getElementById("itemsPageInfo").textContent =
+    `${start + 1}–${end} of ${total} items  (page ${_itemPage}/${totalPages})`;
+}
+
+function itemsPageNav(dir) {
+  _itemPage = Math.max(1, Math.min(Math.ceil(_filteredItems.length / ITEMS_PER_PAGE), _itemPage + dir));
+  renderItemsPage();
+  document.getElementById("itemsList").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
 function tapItem(itemId) {
   const existing = selectedItems.find(i=>i.id===itemId);
+  const el = document.getElementById(`ti_${itemId}`);
+  const qtyEl = document.getElementById(`qty_${itemId}`);
+  const chkEl = document.getElementById(`chk_${itemId}`);
   if (existing) {
-    // Already selected — deselect
     selectedItems = selectedItems.filter(i=>i.id!==itemId);
-    document.getElementById(`ti_${itemId}`).classList.remove('tap-item-selected');
-    document.getElementById(`qty_${itemId}`).style.display = 'none';
-    document.getElementById(`chk_${itemId}`).style.display = 'none';
+    if (el)  el.classList.remove("tap-item-selected");
+    if (qtyEl) qtyEl.style.display = "none";
+    if (chkEl) chkEl.style.display = "none";
   } else {
-    // Select with qty 1
     selectedItems.push({ id: itemId, name: itemNameMap[itemId], qty: 1 });
-    document.getElementById(`ti_${itemId}`).classList.add('tap-item-selected');
-    document.getElementById(`qty_${itemId}`).style.display = 'flex';
-    document.getElementById(`chk_${itemId}`).style.display = 'flex';
+    if (el)  el.classList.add("tap-item-selected");
+    if (qtyEl) qtyEl.style.display = "flex";
+    if (chkEl) chkEl.style.display = "flex";
   }
 }
 
@@ -647,19 +768,21 @@ function changeQty(itemId, delta, maxStock) {
   if (!item) return;
   const max = maxStock ? parseInt(maxStock) : 999;
   item.qty = Math.min(max, Math.max(1, item.qty + delta));
-  document.getElementById(`qtynum_${itemId}`).textContent = item.qty;
+  const qn = document.getElementById(`qtynum_${itemId}`);
+  if (qn) qn.textContent = item.qty;
 }
 
 function filterItems() {
-  const q     = document.getElementById("searchItems").value.toLowerCase();
-  const shelf = (document.getElementById("shelfFilter") ? document.getElementById("shelfFilter").value : "").toLowerCase();
-  document.querySelectorAll(".tap-item").forEach(el => {
-    const textMatch  = el.textContent.toLowerCase().includes(q);
-    const itemId     = el.id.replace("ti_", "");
-    const itemLoc    = (itemLocationMap[itemId] || "").toLowerCase();
-    const shelfMatch = !shelf || itemLoc === shelf;
-    el.style.display = (textMatch && shelfMatch) ? "flex" : "none";
+  const q     = (document.getElementById("searchItems")?.value || "").toLowerCase();
+  const shelf = (document.getElementById("shelfFilter")?.value || "").toLowerCase();
+  _filteredItems = _allItemRows.filter(row => {
+    const text = (row.name + " " + row.size + " " + row.loc).toLowerCase();
+    const textMatch  = !q     || text.includes(q);
+    const shelfMatch = !shelf || row.loc.toLowerCase() === shelf;
+    return textMatch && shelfMatch;
   });
+  _itemPage = 1;
+  renderItemsPage();
 }
 
 // ── The 8 Procedures (always shown as cards) ─────────────
@@ -702,29 +825,19 @@ const PROCEDURE_ITEMS = {
   ]
 };
 
-// ── Custom Procedure helpers ─────────────────────────────
-function getCustomProcedures() {
-  return JSON.parse(localStorage.getItem("customProcedures") || "[]");
-}
-function getAllProcedureList() {
-  return [...PROCEDURE_LIST, ...getCustomProcedures()];
-}
-
-// ── Build procedure cards on load (includes custom) ──────
+// ── Build procedure cards on load ────────────────────────
 function buildProcedureCards() {
   const container = document.getElementById("procedureCards");
   if (!container) return;
   container.innerHTML = "";
-  getAllProcedureList().forEach(proc => {
-    const isCustom = !PROCEDURE_LIST.find(p => p.name === proc.name);
+  PROCEDURE_LIST.forEach(proc => {
     const card = document.createElement("div");
     card.id = "proc_" + proc.name.replace(/[^a-zA-Z0-9]/g,"_");
     card.style.cssText = `
       background:${proc.color};border:2px solid ${proc.border};border-radius:12px;
       padding:14px 10px;text-align:center;cursor:pointer;transition:all 0.2s ease;
-      user-select:none;position:relative;`;
+      user-select:none;`;
     card.innerHTML = `
-      ${isCustom ? `<button onclick="event.stopPropagation();deleteCustomProcedure('${proc.name}')" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.15);border:none;color:#555;font-size:11px;cursor:pointer;padding:0;margin:0;line-height:1;font-weight:700;">✕</button>` : ''}
       <div style="font-size:28px;margin-bottom:8px;">${proc.icon}</div>
       <div style="font-size:13px;font-weight:700;color:var(--primary);line-height:1.3;">${proc.name}</div>`;
     card.onclick = () => selectProcedure(proc.name);
@@ -734,85 +847,36 @@ function buildProcedureCards() {
   });
 }
 
-// ── Custom Procedure Modal ───────────────────────────────
-let _selectedColor = "#e8f4ff";
-let _selectedBorder = "#90c8f0";
-
-function openAddProcedureModal() {
-  document.getElementById("addProcedureModal").style.display = "flex";
-  document.getElementById("newProcName").value = "";
-  document.getElementById("newProcIcon").value = "";
-  renderCustomProcList();
-}
-function closeAddProcedureModal() {
-  document.getElementById("addProcedureModal").style.display = "none";
-}
-function selectColor(el) {
-  document.querySelectorAll(".color-swatch").forEach(s => s.classList.remove("active"));
-  el.classList.add("active");
-  _selectedColor  = el.dataset.color;
-  _selectedBorder = el.dataset.border;
-}
-function saveCustomProcedure() {
-  const name = document.getElementById("newProcName").value.trim();
-  const icon = document.getElementById("newProcIcon").value.trim() || "🔬";
-  if (!name) { showNotification("Please enter a procedure name", "error"); return; }
-  const existing = getCustomProcedures();
-  const allNames = getAllProcedureList().map(p => p.name.toLowerCase());
-  if (allNames.includes(name.toLowerCase())) { showNotification("Procedure already exists", "error"); return; }
-  existing.push({ name, icon, color: _selectedColor, border: _selectedBorder });
-  localStorage.setItem("customProcedures", JSON.stringify(existing));
-  showNotification(`✓ "${name}" added!`, "success");
-  document.getElementById("newProcName").value = "";
-  document.getElementById("newProcIcon").value = "";
-  buildProcedureCards();
-  renderCustomProcList();
-}
-function deleteCustomProcedure(name) {
-  if (!confirm(`Remove "${name}" from your procedures?`)) return;
-  const updated = getCustomProcedures().filter(p => p.name !== name);
-  localStorage.setItem("customProcedures", JSON.stringify(updated));
-  buildProcedureCards();
-  if (document.getElementById("addProcedureModal").style.display === "flex") renderCustomProcList();
-  showNotification("Procedure removed", "info");
-}
-function renderCustomProcList() {
-  const list = document.getElementById("customProcList");
-  const custom = getCustomProcedures();
-  if (!custom.length) { list.innerHTML = ""; return; }
-  list.innerHTML = `<div style="font-size:11px;text-transform:uppercase;font-weight:700;color:var(--text-muted);letter-spacing:0.7px;margin-bottom:8px;">Your custom procedures</div>` +
-    custom.map(p => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:${p.color};border:1px solid ${p.border};border-radius:8px;margin-bottom:6px;">
-      <span style="font-size:14px;font-weight:600;color:var(--primary);">${p.icon} ${p.name}</span>
-      <button onclick="deleteCustomProcedure('${p.name}')" style="width:auto;padding:3px 10px;font-size:12px;background:transparent;color:var(--danger);border:1px solid var(--danger);border-radius:6px;margin:0;">Remove</button>
-    </div>`).join("");
-}
-
 function selectProcedure(procName) {
+  // Update hidden input
   document.getElementById("borrowProcedure").value = procName;
 
-  getAllProcedureList().forEach(p => {
+  // Highlight selected card, reset others
+  PROCEDURE_LIST.forEach(p => {
     const card = document.getElementById("proc_" + p.name.replace(/[^a-zA-Z0-9]/g,"_"));
     if (!card) return;
     if (p.name === procName) {
-      card.style.transform = "translateY(-3px)";
-      card.style.boxShadow = "0 6px 20px rgba(13,79,79,0.25)";
-      card.style.border    = "2.5px solid var(--primary)";
-      card.style.outline   = "3px solid rgba(13,79,79,0.15)";
+      card.style.transform   = "translateY(-3px)";
+      card.style.boxShadow   = "0 6px 20px rgba(13,79,79,0.25)";
+      card.style.border      = "2.5px solid var(--primary)";
+      card.style.outline     = "3px solid rgba(13,79,79,0.15)";
     } else {
-      const orig = getAllProcedureList().find(x=>x.name===p.name);
-      card.style.transform = "";
-      card.style.boxShadow = "";
-      card.style.border    = `2px solid ${orig ? orig.border : "var(--border)"}`;
-      card.style.outline   = "";
+      const orig = PROCEDURE_LIST.find(x=>x.name===p.name);
+      card.style.transform   = "";
+      card.style.boxShadow   = "";
+      card.style.border      = `2px solid ${orig ? orig.border : "var(--border)"}`;
+      card.style.outline     = "";
     }
   });
 
-  document.getElementById("procedureCards").style.display = "none";
+  // Hide cards grid, show selected display
+  document.getElementById("procedureCards").style.display          = "none";
   const disp = document.getElementById("selectedProcedureDisplay");
   disp.style.display = "flex";
-  const proc = getAllProcedureList().find(p=>p.name===procName);
+  const proc = PROCEDURE_LIST.find(p=>p.name===procName);
   document.getElementById("selectedProcedureLabel").textContent = (proc ? proc.icon + " " : "") + procName;
 
+  // Auto-select items
   autoSelectProcedureItems(procName);
 }
 
@@ -820,7 +884,8 @@ function clearSelectedProcedure() {
   document.getElementById("borrowProcedure").value = "";
   document.getElementById("procedureCards").style.display = "grid";
   document.getElementById("selectedProcedureDisplay").style.display = "none";
-  getAllProcedureList().forEach(p => {
+  // Reset all card styles
+  PROCEDURE_LIST.forEach(p => {
     const card = document.getElementById("proc_" + p.name.replace(/[^a-zA-Z0-9]/g,"_"));
     if (!card) return;
     card.style.transform = "";
@@ -835,18 +900,28 @@ function autoSelectProcedureItems(proc) {
   const keywords = PROCEDURE_ITEMS[proc] || [];
   // Clear existing selection first
   clearProcedureKit(false);
-  if (keywords.length === 0) return;
+  if (keywords.length === 0) {
+    renderItemsPage();
+    return;
+  }
 
+  // Match against ALL items (not just current page DOM)
   let matched = 0;
-  document.querySelectorAll(".tap-item:not(.tap-item-disabled)").forEach(el => {
-    const itemId   = el.id.replace("ti_", "");
-    const itemName = (itemNameMap[itemId] || "").toLowerCase();
-    const isMatch  = keywords.some(kw => itemName.includes(kw.toLowerCase()));
-    if (isMatch && !selectedItems.find(i => i.id === itemId)) {
-      tapItem(itemId);
-      matched++;
+  _allItemRows.forEach(row => {
+    if (row.avail) {
+      const itemName = (itemNameMap[row.itemId] || "").toLowerCase();
+      const isMatch  = keywords.some(kw => itemName.includes(kw.toLowerCase()));
+      if (isMatch && !selectedItems.find(i => i.id === row.itemId)) {
+        selectedItems.push({ id: row.itemId, name: itemNameMap[row.itemId], qty: 1 });
+        matched++;
+      }
     }
   });
+
+  // Reset filter and go to page 1 so selected items are visible
+  _filteredItems = [..._allItemRows];
+  _itemPage = 1;
+  renderItemsPage();
 
   const banner = document.getElementById("procedureKitBanner");
   if (matched > 0) {
@@ -855,13 +930,14 @@ function autoSelectProcedureItems(proc) {
     showNotification(`✓ ${matched} item(s) suggested for ${proc}`, "success");
   } else {
     banner.style.display = "none";
-    showNotification(`No matching items in inventory for ${proc} — select manually`, "info");
+    showNotification(`No matching items in inventory for "${proc}" — select manually`, "info");
   }
 }
 
 function clearProcedureKit(showMsg = true) {
-  [...selectedItems].forEach(item => tapItem(item.id));
   selectedItems = [];
+  _itemPage = 1;
+  renderItemsPage();
   document.getElementById("procedureKitBanner").style.display = "none";
   if (showMsg) showNotification("Kit cleared", "info");
 }
@@ -1011,20 +1087,17 @@ function resetBorrowForm() {
   document.getElementById("borrowAttestedBy").value = "";
   document.getElementById("borrowNotes").value      = "";
   document.getElementById("borrowConfirm").checked  = false;
-  // Reset all tap items
-  document.querySelectorAll(".tap-item").forEach(el=>{
-    el.classList.remove('tap-item-selected');
-  });
-  document.querySelectorAll(".tap-qty-box").forEach(el=>el.style.display='none');
-  document.querySelectorAll(".tap-check").forEach(el=>el.style.display='none');
-  document.querySelectorAll(".qty-num").forEach(el=>el.textContent='1');
+  // Re-render paginated items (clears selection visually)
+  _filteredItems = [..._allItemRows];
+  _itemPage = 1;
+  renderItemsPage();
   // Reset quick date buttons
   const qd = document.getElementById("returnDateQuick");
   if (qd) qd.querySelectorAll("button").forEach(b => {
-    b.classList.remove('qd-active');
-    b.style.background  = 'var(--surface)';
-    b.style.color       = 'var(--text-muted)';
-    b.style.borderColor = 'var(--border)';
+    b.classList.remove("qd-active");
+    b.style.background  = "var(--surface)";
+    b.style.color       = "var(--text-muted)";
+    b.style.borderColor = "var(--border)";
   });
 }
 
@@ -1040,12 +1113,9 @@ function getLocalBorrows() {
   return JSON.parse(localStorage.getItem(storageKey())||"[]");
 }
 
-// ── My Borrows (paginated) ────────────────────────────────
-const BORROWS_PER_PAGE = 5;
-let _allBorrowCards = [];
-let _borrowPage = 1;
-
+// ── My Borrows ────────────────────────────────────────────
 function loadBorrowedItems() {
+  // Fetch server-side status to cross-reference
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getBorrowedItems", student:getUserID() }) })
   .then(r=>r.json())
   .then(serverData => renderBorrowedItems(serverData))
@@ -1053,72 +1123,73 @@ function loadBorrowedItems() {
 }
 
 function renderBorrowedItems(serverData) {
-  _allBorrowCards = [];
+  const container = document.getElementById("borrowedItemsList");
+  container.innerHTML = "";
 
+  // Build set of item IDs currently marked as "Borrowed" on server
   const serverBorrowedItems = new Set();
   if (serverData && Array.isArray(serverData) && !serverData.error) {
     serverData.forEach(record => {
       const status = record.length>=7 ? record[6] : record[5];
       const items  = record.length>=7 ? record[3] : record[2];
-      if (status==="Borrowed") items.split(",").forEach(id => serverBorrowedItems.add(id.trim()));
+      if (status==="Borrowed") {
+        items.split(",").forEach(id => serverBorrowedItems.add(id.trim()));
+      }
     });
   }
 
   const localBorrows = getLocalBorrows();
+  let hasAny = false;
 
+  // Show local borrow records (these have full item names)
   localBorrows.forEach(record => {
     const returnDate = new Date(record.returnDate);
     const isOverdue  = returnDate < new Date();
     const itemNames  = record.itemList && record.itemList.length
       ? record.itemList
       : (record.itemNames ? record.itemNames.split(", ") : ["Unknown item"]);
+
     const qrPayload = JSON.stringify({
-      student: record.student, studentName: record.studentName,
-      items: record.items, itemTypes: record.itemTypes || "",
-      itemNames: record.itemNames, returnDate: record.returnDate, action: "return"
+      student:     record.student,
+      studentName: record.studentName,
+      items:       record.items,
+      itemTypes:   record.itemTypes || "",
+      itemNames:   record.itemNames,
+      returnDate:  record.returnDate,
+      action:      "return"
     });
-    _allBorrowCards.push(buildBorrowCard({ itemNames, itemTypes: record.itemTypes || "", returnDate, isOverdue, qrPayload }));
+
+    hasAny = true;
+    container.innerHTML += buildBorrowCard({ itemNames, itemTypes: record.itemTypes || "", returnDate, isOverdue, qrPayload });
   });
 
-  if (!_allBorrowCards.length && serverData && Array.isArray(serverData)) {
+  // Fallback: server records if no local data (logged in from different device)
+  if (!hasAny && serverData && Array.isArray(serverData)) {
     serverData.forEach(record => {
-      const status = record.length>=7 ? record[6] : record[5];
-      const rawItems = record.length>=7 ? record[3] : record[2];
+      const status     = record.length>=7 ? record[6] : record[5];
+      const rawItems   = record.length>=7 ? record[3] : record[2];
       const returnDateV = record.length>=7 ? record[5] : record[4];
       if (status!=="Borrowed") return;
-      const itemNames = resolveItemNames(rawItems);
+
+      const itemNames  = resolveItemNames(rawItems);
       const returnDate = new Date(returnDateV);
-      const isOverdue = returnDate < new Date();
-      const qrPayload = JSON.stringify({
-        student: getUserID(), studentName: getUserName(),
-        items: rawItems, itemNames: itemNames.join(", "),
-        returnDate: returnDateV, action: "return"
+      const isOverdue  = returnDate < new Date();
+      const qrPayload  = JSON.stringify({
+        student:     getUserID(),
+        studentName: getUserName(),
+        items:       rawItems,
+        itemNames:   itemNames.join(", "),
+        returnDate:  returnDateV,
+        action:      "return"
       });
-      _allBorrowCards.push(buildBorrowCard({ itemNames, itemTypes: "", returnDate, isOverdue, qrPayload }));
+
+      hasAny = true;
+      container.innerHTML += buildBorrowCard({ itemNames, itemTypes: data[i] && data[i][9] ? String(data[i][9]) : "", returnDate, isOverdue, qrPayload });
     });
   }
 
-  _borrowPage = 1;
-  renderBorrowPage();
-}
-
-function renderBorrowPage() {
-  const container = document.getElementById("borrowedItemsList");
-  const pg = document.getElementById("borrowedPagination");
-  const total = _allBorrowCards.length;
-
-  if (total === 0) {
+  if (!hasAny)
     container.innerHTML = "<div class='empty-state'><div class='icon'>📭</div>No items currently borrowed</div>";
-    pg.innerHTML = ""; return;
-  }
-
-  const totalPages = Math.ceil(total / BORROWS_PER_PAGE);
-  _borrowPage = Math.min(_borrowPage, totalPages);
-  const start = (_borrowPage - 1) * BORROWS_PER_PAGE;
-  const end   = Math.min(start + BORROWS_PER_PAGE, total);
-
-  container.innerHTML = _allBorrowCards.slice(start, end).join("");
-  renderSimplePagination(pg, _borrowPage, totalPages, total, start, end, p => { _borrowPage = p; renderBorrowPage(); });
 }
 
 function buildBorrowCard({ itemNames, itemTypes, returnDate, isOverdue, qrPayload }) {
@@ -1242,53 +1313,51 @@ function saveReturnQR() {
   a.click();
 }
 
-// ── Shared pagination renderer ────────────────────────────
-function renderSimplePagination(pg, currentPage, totalPages, total, start, end, goTo) {
-  pg.innerHTML = "";
-  if (totalPages <= 1) return;
-  const prev = document.createElement("button"); prev.className="pg-btn"; prev.textContent="← Prev"; prev.disabled=currentPage===1;
-  prev.onclick=()=>goTo(currentPage-1);
-  pg.appendChild(prev);
-  const ps=Math.max(1,Math.min(currentPage-2,totalPages-4)), pe=Math.min(totalPages,ps+4);
-  for(let p=ps;p<=pe;p++){const b=document.createElement("button");b.className="pg-btn"+(p===currentPage?" active":"");b.textContent=p;b.onclick=(()=>{const pp=p;return()=>goTo(pp);})();pg.appendChild(b);}
-  const info=document.createElement("span"); info.className="pg-info"; info.textContent=`${start+1}–${end} of ${total}`;
-  pg.appendChild(info);
-  const next=document.createElement("button"); next.className="pg-btn"; next.textContent="Next →"; next.disabled=currentPage===totalPages;
-  next.onclick=()=>goTo(currentPage+1);
-  pg.appendChild(next);
-}
-
-// ── History (paginated) ───────────────────────────────────
-const HISTORY_PER_PAGE = 5;
-let _allHistoryCards = [];
-let _historyPage = 1;
-
+// ── History ───────────────────────────────────────────────
 function loadBorrowHistory() {
   const container = document.getElementById("historyList");
   container.innerHTML = "<div class='empty-state'><div class='icon'>⏳</div>Loading history...</div>";
-  document.getElementById("historyPagination").innerHTML = "";
 
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getBorrowHistory", student:getUserID() }) })
-  .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then(r => {
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  })
   .then(data => {
-    _allHistoryCards = [];
+    container.innerHTML = "";
+
     if (!data || data.length === 0 || data.error) {
       container.innerHTML = "<div class='empty-state'><div class='icon'>📋</div>No borrow history yet</div>";
       return;
     }
-    const sorted = [...data].reverse();
-    sorted.forEach(record => {
-      let status, rawItems, borrowDateV, returnDateV;
-      if (record.length >= 7) { status=record[6]; rawItems=record[3]; borrowDateV=record[4]; returnDateV=record[5]; }
-      else { status=record[5]; rawItems=record[2]; borrowDateV=record[3]; returnDateV=record[4]; }
-      if (!rawItems) return;
 
-      const itemNames = resolveItemNames(rawItems);
-      const single = itemNames.length === 1;
-      const titleText = single ? itemNames[0] : `${itemNames.length} items`;
-      const recProc   = record.length > 13 ? (record[13] || "") : "";
-      const recCourse = record.length > 11 ? (record[11] || "") : "";
-      const recIdNum  = record.length > 10 ? (record[10] || "") : "";
+    // Sort newest first
+    const sorted = [...data].reverse();
+
+    sorted.forEach(record => {
+      // Handle variable record formats
+      let status, rawItems, borrowDateV, returnDateV;
+      if (record.length >= 7) {
+        status      = record[6];
+        rawItems    = record[3];
+        borrowDateV = record[4];
+        returnDateV = record[5];
+      } else {
+        status      = record[5];
+        rawItems    = record[2];
+        borrowDateV = record[3];
+        returnDateV = record[4];
+      }
+
+      if (!rawItems) return; // skip empty records
+
+      const itemNames  = resolveItemNames(rawItems);
+      const single     = itemNames.length === 1;
+      const titleText  = single ? itemNames[0] : `${itemNames.length} items`;
+      // procedure stored in col 13, idNumber col 10, course col 11
+      const recProc    = record.length > 13 ? (record[13] || "") : "";
+      const recCourse  = record.length > 11 ? (record[11] || "") : "";
+      const recIdNum   = record.length > 10 ? (record[10] || "") : "";
 
       const badge = status === "Returned"
         ? `<span class="status-badge status-returned">✓ Returned</span>`
@@ -1306,7 +1375,7 @@ function loadBorrowHistory() {
         </div>` : "";
 
       const metaExtra = [
-        recIdNum  ? `<p><strong>ID:</strong> ${recIdNum}</p>` : "",
+        recIdNum  ? `<p><strong>ID:</strong> ${recIdNum}</p>`     : "",
         recCourse ? `<p><strong>Course:</strong> ${recCourse}</p>` : ""
       ].filter(Boolean).join("");
 
@@ -1314,7 +1383,7 @@ function loadBorrowHistory() {
       try { borrowDateStr = new Date(borrowDateV).toLocaleString(); } catch(e){}
       try { returnDateStr = new Date(returnDateV).toLocaleString(); } catch(e){}
 
-      _allHistoryCards.push(`
+      container.innerHTML += `
         <div class="borrow-card">
           ${procBadge}
           <div class="borrow-card-title">${titleText}</div>
@@ -1325,28 +1394,17 @@ function loadBorrowHistory() {
             <p><strong>Return date:</strong> ${returnDateStr}</p>
           </div>
           ${badge}
-        </div>`);
+        </div>`;
     });
-    _historyPage = 1;
-    renderHistoryPage();
+
+    if (container.innerHTML === "") {
+      container.innerHTML = "<div class='empty-state'><div class='icon'>📋</div>No history yet</div>";
+    }
   })
   .catch(err => {
     console.error("History error:", err);
     container.innerHTML = "<div class='empty-state' style='color:var(--danger);'>❌ Failed to load history. Please try again.</div>";
   });
-}
-
-function renderHistoryPage() {
-  const container = document.getElementById("historyList");
-  const pg = document.getElementById("historyPagination");
-  const total = _allHistoryCards.length;
-  if (total === 0) { container.innerHTML = "<div class='empty-state'><div class='icon'>📋</div>No history yet</div>"; pg.innerHTML=""; return; }
-  const totalPages = Math.ceil(total / HISTORY_PER_PAGE);
-  _historyPage = Math.min(_historyPage, totalPages);
-  const start = (_historyPage - 1) * HISTORY_PER_PAGE;
-  const end   = Math.min(start + HISTORY_PER_PAGE, total);
-  container.innerHTML = _allHistoryCards.slice(start, end).join("");
-  renderSimplePagination(pg, _historyPage, totalPages, total, start, end, p => { _historyPage = p; renderHistoryPage(); });
 }
 
 // ── Resolve item IDs → names ──────────────────────────────
@@ -1389,6 +1447,7 @@ checkAuth();
 loadItems();
 checkOverdueItems();
 initBorrowForm();
+initTabNav();
 setInterval(checkOverdueItems, 5*60*1000);
 
 // ── Quick Return Date Buttons ─────────────────────────────
