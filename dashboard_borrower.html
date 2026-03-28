@@ -415,8 +415,9 @@ function loadItems() {
     selectedItems   = [];
     _allItemRows    = [];
 
-    if (!data || data.length <= 1) {
-      document.getElementById("itemsList").innerHTML = "<div class='empty-state'><div class='icon'></div>No items available</div>";
+    // Handle error response object or empty/header-only array
+    if (!Array.isArray(data) || data.length <= 1) {
+      document.getElementById("itemsList").innerHTML = "<div class='empty-state'><div class='icon'></div>No items in inventory yet. Ask your instructor to add items.</div>";
       document.getElementById("itemsPageNav").style.display = "none";
       return;
     }
@@ -441,7 +442,10 @@ function loadItems() {
     _itemPage = 1;
     renderItemsPage();
   })
-  .catch(()=>showNotification("Failed to load items","error"));
+  .catch(err => {
+    document.getElementById("itemsList").innerHTML = "<div class='empty-state'><div class='icon'></div>Could not load items. Check your connection and try refreshing.</div>";
+    showNotification("Failed to load items — check connection", "error");
+  });
 }
 
 function renderItemsPage() {
