@@ -59,67 +59,88 @@
 
     /* ── Arrow Tab Navigation ─────────────────────────── */
     .tab-nav {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-      background: var(--surface);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
-      overflow: hidden;
+      display: flex; align-items: center;
+      margin-bottom: 20px; background: var(--surface);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden;
     }
     .tab-arrow {
-      flex: 0 0 48px;
-      height: 52px;
-      background: transparent;
-      border: none;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--primary);
-      cursor: pointer;
-      transition: background 0.2s;
-      margin: 0;
-      border-radius: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 48px;
+      flex: 0 0 48px; height: 52px; background: transparent; border: none;
+      font-size: 20px; font-weight: 700; color: var(--primary); cursor: pointer;
+      transition: background 0.2s; margin: 0; border-radius: 0;
+      display: flex; align-items: center; justify-content: center; width: 48px;
     }
     .tab-arrow:hover:not(:disabled) { background: var(--surface-alt); transform: none; box-shadow: none; }
     .tab-arrow:disabled { opacity: 0.25; cursor: not-allowed; }
     .tab-indicator-wrap {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 8px 8px;
-      border-left: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      min-width: 0;
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 10px 8px 8px;
+      border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-width: 0;
     }
     .tab-label {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--primary);
-      font-family: 'DM Sans', sans-serif;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
+      font-size: 14px; font-weight: 700; color: var(--primary);
+      font-family: 'DM Sans', sans-serif; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; max-width: 100%;
     }
-    .tab-dots {
-      display: flex;
-      gap: 6px;
-      margin-top: 5px;
-    }
+    .tab-dots { display: flex; gap: 6px; margin-top: 5px; }
     .tab-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--border);
-      transition: all 0.25s;
-      cursor: pointer;
+      width: 7px; height: 7px; border-radius: 50%; background: var(--border);
+      transition: all 0.25s; cursor: pointer;
     }
     .tab-dot.active { background: var(--primary); transform: scale(1.3); }
+
+    /* ── Stock unit row ────────────────────────────────── */
+    .stock-unit-row { display: flex; gap: 10px; align-items: flex-end; }
+    .stock-unit-row .stock-input { flex: 1; }
+    .stock-unit-row select.unit-sel { flex: 0 0 100px; }
+
+    /* ── Procedure tags ────────────────────────────────── */
+    .proc-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+    .proc-tag {
+      padding: 5px 13px; border-radius: 20px;
+      background: var(--surface-alt); border: 1.5px solid var(--border);
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; transition: all 0.18s; user-select: none;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .proc-tag:hover  { border-color: var(--primary); color: var(--primary); background: #edf5f3; }
+    .proc-tag.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* ── Suggested items hint ──────────────────────────── */
+    #suggestedItems {
+      display: none; margin-top: 14px; padding: 14px 16px;
+      background: #eaf4f0; border: 1px solid #b0d9cb;
+      border-left: 4px solid var(--primary); border-radius: var(--radius);
+    }
+    #suggestedItems .sugg-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.7px; color: var(--primary); margin-bottom: 8px;
+    }
+    .sugg-chip {
+      display: inline-block; background: white; border: 1px solid #b0d9cb;
+      border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600;
+      color: var(--primary); margin: 3px 3px 3px 0;
+    }
+
+    /* ── Inventory pagination ──────────────────────────── */
+    .pagination {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; margin-top: 18px; flex-wrap: wrap;
+    }
+    .pg-btn {
+      padding: 7px 14px; font-size: 13px; font-weight: 600;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--surface); color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+      width: auto; margin: 0;
+    }
+    .pg-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); transform: none; box-shadow: none; }
+    .pg-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pg-info { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+    /* ── Add item grid ─────────────────────────────────── */
+    .add-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+    @media (max-width: 520px) { .add-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body class="dashboard-body">
@@ -229,7 +250,6 @@
 
 <!-- Dashboard Content -->
 <div class="dashboard-main">
-  <!-- Arrow tab navigation -->
   <div class="tab-nav" id="tabNav">
     <button class="tab-arrow" id="tabPrev" onclick="navTab(-1)" disabled>&#8592;</button>
     <div class="tab-indicator-wrap">
@@ -238,6 +258,9 @@
     </div>
     <button class="tab-arrow" id="tabNext" onclick="navTab(1)">&#8594;</button>
   </div>
+  <!-- Hidden badges still updated by JS, read by updateAdminBadges() -->
+  <span id="alertsCount"  style="display:none;"></span>
+  <span id="borrowedCount" style="display:none;"></span>
 
   <!-- TAB: By Shelf -->
   <div id="shelf-tab" class="tab-content">
@@ -274,11 +297,21 @@
   <div id="inventory-tab" class="tab-content active">
     <div class="card">
       <h3>➕ Add New Item</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+      <div class="add-grid">
         <div class="form-group"><label>Item Name</label><input id="item" type="text" placeholder="e.g., Stethoscope"></div>
         <div class="form-group"><label>Size / Variant</label><input id="size" type="text" placeholder="e.g., Large, Adult"></div>
         <div class="form-group"><label>Item Code</label><input id="code" type="text" placeholder="e.g., STH-001"></div>
-        <div class="form-group"><label>Stock Quantity</label><input id="stock" type="number" placeholder="0" min="0"></div>
+        <div class="form-group">
+          <label>Stock Quantity &amp; Unit</label>
+          <div class="stock-unit-row">
+            <input id="stock" type="number" placeholder="0" min="0" class="stock-input">
+            <select id="stockUnit" class="unit-sel">
+              <option value="pcs">pcs</option><option value="boxes">boxes</option>
+              <option value="sets">sets</option><option value="rolls">rolls</option>
+              <option value="pairs">pairs</option><option value="bottles">bottles</option>
+            </select>
+          </div>
+        </div>
         <div class="form-group">
           <label>Item Type</label>
           <select id="type">
@@ -289,20 +322,31 @@
         </div>
         <div class="form-group"><label>Storage Location</label><input id="location" type="text" placeholder="e.g., Cabinet A1"></div>
       </div>
-      <button onclick="addItem()">➕ Add Item</button>
+      <!-- Procedure picker -->
+      <div class="form-group" style="margin-top:8px;">
+        <label>Used in Procedures <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(select all that apply)</span></label>
+        <div class="proc-tags" id="addProcTags"></div>
+      </div>
+      <div id="suggestedItems">
+        <div class="sugg-title">💡 Common items for this procedure</div>
+        <div id="suggChips"></div>
+      </div>
+      <button onclick="addItem()" style="margin-top:16px;">➕ Add Item</button>
     </div>
 
     <div class="card">
       <h3>📋 Inventory List</h3>
-      <div class="form-group" style="margin-bottom:14px;">
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
         <input id="inventorySearch" type="text" placeholder="🔍 Search items by name, code, or location..."
-          oninput="filterInventoryTable()"
-          style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s;"
+          oninput="searchAndPage()"
+          style="flex:1;min-width:180px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text-main);background:var(--surface);outline:none;transition:border-color 0.2s;"
           onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+        <span id="invTotalCount" style="font-size:13px;color:var(--text-muted);white-space:nowrap;"></span>
       </div>
       <div class="table-wrapper">
         <table id="inventoryTable"></table>
       </div>
+      <div class="pagination" id="invPagination"></div>
     </div>
   </div>
 
@@ -368,6 +412,66 @@ document.addEventListener("click", e => {
     menu.classList.remove("active");
 });
 
+// ── Procedure data ───────────────────────────────────────
+const PROCEDURES = [
+  { id:'handwash',    label:'🧼 Hand Washing' },
+  { id:'wound',       label:'🩹 Wound Care' },
+  { id:'ie',          label:'🔍 Internal Examination' },
+  { id:'catheter',    label:'💧 Female Catheterization' },
+  { id:'leopold',     label:'🤰 Leopold\'s Maneuver' },
+  { id:'perianal',    label:'♻️ Perianal Flushing' },
+  { id:'newborn',     label:'👶 Newborn Care' },
+  { id:'intrapartum', label:'🏥 Intrapartum Care' },
+  { id:'vitals',      label:'🫀 Vital Signs' },
+  { id:'injection',   label:'💉 Injection / IV' },
+  { id:'ngt',         label:'🍽️ NGT Insertion' },
+  { id:'cpr',         label:'🫁 CPR / BLS' },
+];
+const PROC_ITEMS = {
+  handwash:    ['soap','alcohol','hand sanitizer','basin','towel','gloves','apron'],
+  wound:       ['gauze','bandage','dressing','iodine','antiseptic','forceps','scissors','tape','saline','cotton','syringe','gloves','basin'],
+  ie:          ['gloves','sterile gloves','lubricant','jelly','speculum','drape','basin','pad','underpad'],
+  catheter:    ['catheter','foley','urine bag','drainage bag','lubricant','jelly','sterile gloves','antiseptic','cotton','syringe','saline','basin','tape','drape'],
+  leopold:     ['stethoscope','doppler','fetoscope','measuring tape','tape measure','lubricant','jelly','gloves','drape'],
+  perianal:    ['basin','soap','cotton','gauze','gloves','towel','pad','underpad','forceps','antiseptic'],
+  newborn:     ['bulb syringe','suction','cord clamp','vitamin k','erythromycin','eye ointment','scale','blanket','towel','gloves','basin','thermometer','stethoscope','tape','measuring tape'],
+  intrapartum: ['gloves','sterile gloves','scissors','clamp','cord clamp','basin','drape','suture','needle','syringe','iv','catheter','stethoscope','doppler','pad','underpad','gauze','cotton','antiseptic'],
+  vitals:      ['stethoscope','bp apparatus','thermometer','pulse oximeter','watch','penlight'],
+  injection:   ['syringe','needle','alcohol swab','tourniquet','iv catheter','tape','gloves','cotton'],
+  ngt:         ['ngt tube','syringe','tape','lubricant','tongue depressor','penlight','gloves','basin'],
+  cpr:         ['bvm','ambu bag','face shield','gloves','aed','suction catheter'],
+};
+let selectedAddProcs = new Set();
+
+function buildProcTags(containerId, selectedSet, onChangeCb) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  PROCEDURES.forEach(proc => {
+    const tag = document.createElement('span');
+    tag.className = 'proc-tag' + (selectedSet.has(proc.id) ? ' active' : '');
+    tag.textContent = proc.label;
+    tag.onclick = () => {
+      if (selectedSet.has(proc.id)) { selectedSet.delete(proc.id); tag.classList.remove('active'); }
+      else { selectedSet.add(proc.id); tag.classList.add('active'); }
+      if (onChangeCb) onChangeCb();
+    };
+    container.appendChild(tag);
+  });
+}
+
+function updateSuggestions() {
+  const box = document.getElementById('suggestedItems');
+  const chips = document.getElementById('suggChips');
+  if (selectedAddProcs.size === 0) { box.style.display = 'none'; return; }
+  const seen = new Set(), allItems = [];
+  selectedAddProcs.forEach(pid => {
+    (PROC_ITEMS[pid] || []).forEach(it => { if (!seen.has(it)) { seen.add(it); allItems.push(it); }});
+  });
+  box.style.display = 'block';
+  chips.innerHTML = allItems.map(it => `<span class="sugg-chip">📦 ${it}</span>`).join('');
+}
+
 // ── Arrow Tab Navigation ─────────────────────────────────
 const ADMIN_TABS = [
   { id: 'inventory-tab', label: '📦 Inventory' },
@@ -392,11 +496,16 @@ function initAdminTabNav() {
     dots.appendChild(d);
   });
   updateAdminTabNav();
+  // Init procedure tags
+  buildProcTags('addProcTags', selectedAddProcs, updateSuggestions);
+  // Init modals backdrop close
+  ['profileModal','passwordModal','editModal','borrowerDetailModal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+  });
 }
 
-function navTab(dir) {
-  goToAdminTab(_adminTabIdx + dir);
-}
+function navTab(dir) { goToAdminTab(_adminTabIdx + dir); }
 
 function goToAdminTab(idx) {
   _adminTabIdx = Math.max(0, Math.min(ADMIN_TABS.length - 1, idx));
@@ -417,28 +526,18 @@ function updateAdminTabNav() {
   if (label) label.textContent = ADMIN_TABS[_adminTabIdx].label;
   if (prev)  prev.disabled  = _adminTabIdx === 0;
   if (next)  next.disabled  = _adminTabIdx === ADMIN_TABS.length - 1;
-  // Update badge visibility in label for alerts/borrows
-  updateAdminBadges();
   ADMIN_TABS.forEach((_, i) => {
     const d = document.getElementById('admindot_' + i);
     if (d) d.className = 'tab-dot' + (i === _adminTabIdx ? ' active' : '');
   });
+  // Show counts in label
+  const ab = document.getElementById('alertsCount');
+  const bb = document.getElementById('borrowedCount');
+  if (_adminTabIdx === 3 && ab && ab.textContent) label.textContent = '🔔 Alerts (' + ab.textContent + ')';
+  if (_adminTabIdx === 4 && bb && bb.textContent) label.textContent = '🔄 Borrows (' + bb.textContent + ')';
 }
 
-function updateAdminBadges() {
-  // Re-inject badge counts into label if on alerts/borrows tab
-  const alertsBadge   = document.getElementById('alertsCount');
-  const borrowsBadge  = document.getElementById('borrowedCount');
-  const label         = document.getElementById('tabLabel');
-  if (!label) return;
-  if (_adminTabIdx === 3 && alertsBadge && alertsBadge.style.display !== 'none') {
-    label.textContent = '🔔 Alerts (' + alertsBadge.textContent + ')';
-  } else if (_adminTabIdx === 4 && borrowsBadge && borrowsBadge.style.display !== 'none') {
-    label.textContent = '🔄 Borrows (' + borrowsBadge.textContent + ')';
-  }
-}
-
-// Keep backward compat — called by badge renders
+// backward compat
 function switchTab(tabName, btn) {
   const idx = ADMIN_TABS.findIndex(t => t.id === tabName);
   if (idx >= 0) goToAdminTab(idx);
@@ -587,7 +686,7 @@ function renderAlerts() {
   const badge = document.getElementById("alertsCount");
   if (total > 0) { badge.textContent = total; badge.style.display = "inline-block"; }
   else badge.style.display = "none";
-  if (typeof updateAdminBadges === 'function') updateAdminBadges();
+  if (typeof updateAdminTabNav === 'function') updateAdminTabNav();
 
   if (outOfStock.length === 0 && lowStock.length === 0) {
     container.innerHTML = "<div class='empty-state'><div class='icon'>✅</div>All items have sufficient stock</div>";
@@ -691,77 +790,86 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ── Inventory Search ──────────────────────────────────────
-function filterInventoryTable() {
-  const q     = document.getElementById("inventorySearch").value.toLowerCase().trim();
-  const tbody = document.querySelector("#inventoryTable tbody");
-  if (!tbody) return;
-  Array.from(tbody.rows).forEach(row => {
-    row.style.display = row.textContent.toLowerCase().includes(q) ? "" : "none";
-  });
+// ── Inventory search + pagination ─────────────────────────
+let _filteredInvRows = [];
+let _invPage = 1;
+const INV_PER_PAGE = 10;
+
+function searchAndPage() { _invPage = 1; applyInvFilter(); }
+
+function applyInvFilter() {
+  const q = (document.getElementById('inventorySearch')?.value || '').toLowerCase().trim();
+  _filteredInvRows = currentData.length <= 1 ? [] : currentData.slice(1).filter(row =>
+    [row[1],row[2],row[3],row[6]].some(v => (v||'').toString().toLowerCase().includes(q))
+  );
+  renderInvPage();
 }
 
-// ── Inventory ─────────────────────────────────────────────
+// legacy alias
+function filterInventoryTable() { applyInvFilter(); }
+
+function renderInvPage() {
+  const table = document.getElementById('inventoryTable');
+  const total = _filteredInvRows.length;
+  const countEl = document.getElementById('invTotalCount');
+  if (countEl) countEl.textContent = total ? total + ' item' + (total !== 1 ? 's' : '') : '';
+  if (total === 0) {
+    table.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;padding:30px;">No items found.</td></tr>';
+    document.getElementById('invPagination').innerHTML = '';
+    return;
+  }
+  const totalPages = Math.ceil(total / INV_PER_PAGE);
+  _invPage = Math.min(_invPage, totalPages);
+  const start = (_invPage - 1) * INV_PER_PAGE;
+  const end   = Math.min(start + INV_PER_PAGE, total);
+  const pageRows = _filteredInvRows.slice(start, end);
+
+  table.innerHTML = '<thead><tr><th>Item</th><th>Size</th><th>Code</th><th>Stock</th><th>Status</th><th>Type</th><th>Location</th><th>Procedures</th><th>Actions</th></tr></thead><tbody></tbody>';
+  const tbody = table.querySelector('tbody');
+  pageRows.forEach(row => {
+    const realIdx = currentData.indexOf(row);
+    const stock = parseInt(row[4]) || 0;
+    const unit  = row[7] || 'pcs';
+    // Procedures badges (col 8)
+    const procIds = row[8] ? String(row[8]).split(',').map(p=>p.trim()).filter(Boolean) : [];
+    const procHTML = procIds.length
+      ? procIds.map(pid => { const p = PROCEDURES.find(x=>x.id===pid); return p ? `<span style="display:inline-block;background:#e8f4ff;color:#1a5fa0;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:600;margin:1px;">${p.label.split(' ').slice(1).join(' ')}</span>` : ''; }).join('')
+      : '<span style="color:var(--text-muted);font-size:12px;">—</span>';
+    const stockBadge = stock===0 ? '<span class="stock-badge stock-out">Out of Stock</span>'
+      : stock<=3 ? `<span class="stock-badge stock-low">Low (${stock})</span>`
+      : `<span class="stock-badge stock-ok">In Stock (${stock})</span>`;
+    const typeVal = (row[5]||'').trim();
+    const typePill = typeVal==='Consumable' ? '<span class="type-pill type-consumable">Consumable</span>'
+      : typeVal==='Non-Consumable' ? '<span class="type-pill type-nonconsumable">Non-Consumable</span>'
+      : `<span style="color:var(--text-muted);font-size:13px;">${typeVal||'—'}</span>`;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="font-weight:600;">${row[1]||'—'}</td><td>${row[2]||'—'}</td><td><code style="font-size:12px;background:#f4f7f6;padding:2px 6px;border-radius:4px;">${row[3]||'—'}</code></td><td style="font-weight:700;color:${stock===0?'var(--danger)':stock<=3?'var(--warning)':'var(--text-main)'}">${stock} <span style="font-size:11px;font-weight:400;color:var(--text-muted);">${unit}</span></td><td>${stockBadge}</td><td>${typePill}</td><td>${row[6]||'—'}</td><td>${procHTML}</td><td style="white-space:nowrap;"><button class="tbl-btn btn-success" onclick="openEditModal(${realIdx})" style="background:var(--primary);">✏️ Edit</button><button class="tbl-btn btn-danger" onclick="deleteItem(${realIdx})">🗑 Delete</button></td>`;
+    tbody.appendChild(tr);
+  });
+  // Pagination
+  const pg = document.getElementById('invPagination'); pg.innerHTML = '';
+  if (totalPages <= 1) return;
+  const prev = document.createElement('button'); prev.className='pg-btn'; prev.textContent='← Prev'; prev.disabled=_invPage===1;
+  prev.onclick=()=>{_invPage--;renderInvPage();};
+  pg.appendChild(prev);
+  const ps=Math.max(1,Math.min(_invPage-2,totalPages-4)), pe=Math.min(totalPages,ps+4);
+  for(let p=ps;p<=pe;p++){const b=document.createElement('button');b.className='pg-btn'+(p===_invPage?' active':'');b.textContent=p;b.onclick=(()=>{const pp=p;return()=>{_invPage=pp;renderInvPage();};})();pg.appendChild(b);}
+  const info=document.createElement('span');info.className='pg-info';info.textContent=`${start+1}–${end} of ${total}`;pg.appendChild(info);
+  const next=document.createElement('button');next.className='pg-btn';next.textContent='Next →';next.disabled=_invPage===totalPages;
+  next.onclick=()=>{_invPage++;renderInvPage();};
+  pg.appendChild(next);
+}
+
+// ── Inventory load ────────────────────────────────────────
 function loadItems() {
   fetch(API, { method:"POST", body: new URLSearchParams({ action:"getItems" }) })
   .then(r=>r.json())
   .then(data => {
     currentData = data;
-    const table = document.getElementById("inventoryTable");
-
-    if (!data || data.length <= 1) {
-      table.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;padding:30px;">No items in inventory yet.</td></tr>`;
-      return;
-    }
-
-    table.innerHTML = `
-      <thead><tr>
-        <th>Item</th>
-        <th>Size</th>
-        <th>Code</th>
-        <th>Stock</th>
-        <th>In Stock</th>
-        <th>Type</th>
-        <th>Location</th>
-        <th>Actions</th>
-      </tr></thead>
-      <tbody></tbody>`;
-
-    const tbody = table.querySelector("tbody");
-
-    for (let i = 1; i < data.length; i++) {
-      const row   = data[i];
-      const stock = parseInt(row[4]) || 0;
-
-      // Stock badge
-      let stockBadge;
-      if (stock === 0)   stockBadge = `<span class="stock-badge stock-out">Out of Stock</span>`;
-      else if (stock <= 3) stockBadge = `<span class="stock-badge stock-low">Low (${stock})</span>`;
-      else                 stockBadge = `<span class="stock-badge stock-ok">In Stock (${stock})</span>`;
-
-      // Type pill
-      const typeVal = (row[5] || "").trim();
-      const typePill = typeVal === "Consumable"
-        ? `<span class="type-pill type-consumable">Consumable</span>`
-        : typeVal === "Non-Consumable"
-        ? `<span class="type-pill type-nonconsumable">Non-Consumable</span>`
-        : `<span style="color:var(--text-muted);font-size:13px;">${typeVal || "—"}</span>`;
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td style="font-weight:600;">${row[1]||'—'}</td>
-        <td>${row[2]||'—'}</td>
-        <td><code style="font-size:12px;background:#f4f7f6;padding:2px 6px;border-radius:4px;">${row[3]||'—'}</code></td>
-        <td style="font-weight:700;color:${stock===0?'var(--danger)':stock<=3?'var(--warning)':'var(--text-main)'};">${stock}</td>
-        <td>${stockBadge}</td>
-        <td>${typePill}</td>
-        <td>${row[6]||'—'}</td>
-        <td style="white-space:nowrap;">
-          <button class="tbl-btn btn-success" onclick="openEditModal(${i})" style="background:var(--primary);">✏️ Edit</button>
-          <button class="tbl-btn btn-danger"  onclick="deleteItem(${i})">🗑 Delete</button>
-        </td>`;
-      tbody.appendChild(tr);
-    }
+    _filteredInvRows = data && data.length > 1 ? data.slice(1) : [];
+    _invPage = 1;
+    renderInvPage();
+    renderAlerts();
   })
   .catch(() => showNotification("Failed to load inventory","error"));
 }
@@ -853,8 +961,10 @@ function addItem() {
   const size     = document.getElementById("size").value.trim();
   const code     = document.getElementById("code").value.trim();
   const stock    = document.getElementById("stock").value.trim();
+  const unit     = document.getElementById("stockUnit").value || "pcs";
   const type     = document.getElementById("type").value;
   const location = document.getElementById("location").value.trim();
+  const procs    = Array.from(selectedAddProcs).join(",");
 
   if (!item)     { showNotification("Please enter item name","error"); return; }
   if (!code)     { showNotification("Please enter item code","error"); return; }
@@ -867,8 +977,8 @@ function addItem() {
   setLoading(btn, true);
 
   fetch(API, { method:"POST", body: new URLSearchParams({
-    action:"addItem", item, size, code, stock, type, location,
-    owner: localStorage.getItem("userID")
+    action:"addItem", item, size, code, stock, unit, type, location,
+    procedures: procs, owner: localStorage.getItem("userID")
   })})
   .then(r=>r.json())
   .then(data => {
@@ -877,6 +987,10 @@ function addItem() {
       showNotification("✓ Item added!","success");
       ["item","size","code","stock","location"].forEach(id => document.getElementById(id).value = "");
       document.getElementById("type").value = "";
+      document.getElementById("stockUnit").value = "pcs";
+      selectedAddProcs.clear();
+      buildProcTags('addProcTags', selectedAddProcs, updateSuggestions);
+      updateSuggestions();
       loadItems();
     } else showNotification(data.message||"Failed to add item","error");
   })
@@ -940,7 +1054,7 @@ function renderBorrowerGrid() {
   const badge = document.getElementById('borrowedCount');
   if (totalActive > 0) { badge.textContent = totalActive; badge.style.display='inline-block'; }
   else badge.style.display='none';
-  if (typeof updateAdminBadges === 'function') updateAdminBadges();
+  if (typeof updateAdminTabNav === 'function') updateAdminTabNav();
 
   const entries = Object.values(borrowerMap).filter(b => {
     if (currentFilter==='borrowed') return b.activeCount > 0 || b.overdueCount > 0;
@@ -1135,7 +1249,6 @@ function closeDetailModal() { document.getElementById("borrowerDetailModal").sty
 checkAuth();
 loadItems();
 initAdminTabNav();
-// After a short delay let inventory data populate, then update alert badge
 setTimeout(renderAlerts, 1200);
 </script>
 
